@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button, Panel } from "@/components/ui/AppUI";
@@ -20,7 +21,9 @@ export default function ModeSelect({ onSelect }) {
       >
         <header className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-3 no-underline">
-            <span className="grid h-11 w-11 place-items-center rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] font-black text-[var(--gold)]">DA</span>
+            <span className="grid h-14 w-24 place-items-center rounded-md border border-[color:var(--gold-55)] bg-black/50 p-1">
+              <Image src="/text.png" alt="Digital Art Battle" width={1254} height={838} className="h-full w-full object-contain" priority />
+            </span>
             <span>
               <span className="block font-[var(--font-name)] text-3xl leading-none tracking-normal">Digital Art Battle</span>
               <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">arena setup</span>

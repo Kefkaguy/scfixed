@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -83,8 +84,8 @@ export function TopNav({ session, onSignOut }) {
     <header className="mb-5 rounded-lg border border-[color:var(--color-surface-border-4)] bg-[rgba(5,7,16,0.78)] px-4 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/" className="group flex items-center gap-3 no-underline">
-          <span className="grid h-11 w-11 place-items-center rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] text-xl font-black text-[var(--gold)] shadow-[0_0_28px_rgba(240,192,32,0.12)] transition group-hover:scale-105">
-            DA
+          <span className="grid h-14 w-24 place-items-center rounded-md border border-[color:var(--gold-55)] bg-black/50 p-1 shadow-[0_0_28px_rgba(240,192,32,0.12)] transition group-hover:scale-105">
+            <Image src="/text.png" alt="Digital Art Battle" width={1254} height={838} className="h-full w-full object-contain" priority />
           </span>
           <span>
             <span className="block font-[var(--font-name)] text-2xl leading-none tracking-normal text-white sm:text-3xl">
@@ -213,8 +214,8 @@ export function EmptyState({ title, children, action }) {
   return (
     <Panel className="grid place-items-center p-8 text-center">
       <div className="max-w-lg">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-md border border-[color:var(--gold-35)] bg-[color:var(--gold-10)] font-[var(--font-name)] text-2xl text-[var(--gold)]">
-          DA
+        <div className="mx-auto grid h-16 w-28 place-items-center rounded-md border border-[color:var(--gold-35)] bg-black/50 p-1">
+          <Image src="/text.png" alt="Digital Art Battle" width={1254} height={838} className="h-full w-full object-contain" />
         </div>
         <h3 className="mt-4 font-[var(--font-name)] text-2xl tracking-normal text-white">{title}</h3>
         {children ? <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">{children}</p> : null}

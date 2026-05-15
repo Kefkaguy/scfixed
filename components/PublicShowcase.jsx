@@ -86,8 +86,8 @@ export default function PublicShowcase() {
       <div className="grid gap-5">
         <Panel className="overflow-hidden">
           <div className="grid gap-5 border-b border-[color:var(--color-surface-border-3)] p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <SectionHeader label="Public gallery" title="Teacher Showcase">
-              Approved student work and teacher-created assets appear here for everyone to view or load into the public battle screen.
+            <SectionHeader label="Publication" title="Showcase">
+              Approved student submissions and teacher assets appear here for everyone to view or load into the public battle screen.
             </SectionHeader>
             <div className="flex flex-wrap gap-2 lg:justify-end">
               <Button href={playHref} tone="gold">Play</Button>
@@ -123,7 +123,7 @@ export default function PublicShowcase() {
         ) : items.length === 0 ? (
           <EmptyState title="No public artwork yet">Approved submissions will appear here once a teacher publishes them.</EmptyState>
         ) : (
-          <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {items.map((item) => {
               const isFighter = item.assetType === "fighter";
               const accentColor = isFighter ? item.color || "var(--gold)" : "var(--gold)";

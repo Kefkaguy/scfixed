@@ -62,7 +62,7 @@ export function AppShell({ children, className = "" }) {
   return (
     <main className={`min-h-screen overflow-x-hidden bg-[var(--bg-app-shell)] text-white ${className}`}>
       
-      <motion.div {...pageMotion} className="relative z-10 mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+      <motion.div {...pageMotion} className="relative z-10 mx-auto w-full max-w-[1800px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 2xl:px-10">
         {children}
       </motion.div>
     </main>
@@ -72,10 +72,11 @@ export function AppShell({ children, className = "" }) {
 export function TopNav({ session, onSignOut }) {
   const nav = [
     ["Home", "/"],
-    ["Arena", "/arena"],
+    ["Teacher Assets", "/teacher-assets"],
+    ["Student Submissions", "/student-work"],
+    ["GIF Editor", "/gif-editor"],
     ["Showcase", "/showcase"],
-    ["Student Work", "/student-work"],
-    ["Docs", "/documentation"],
+    ["Arena / Play", "/arena"],
   ];
 
   return (

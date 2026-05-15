@@ -280,7 +280,7 @@ export default function CustomCharactersManager({
   const loadAccount = useCallback(async () => {
     const response = await fetch("/api/account", { cache: "no-store" });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Failed to load teacher gallery.");
+    if (!response.ok) throw new Error(payload.error || "Failed to load teacher assets.");
     setAccount(payload);
     return payload;
   }, []);
@@ -571,8 +571,8 @@ export default function CustomCharactersManager({
         >
           <div className="border-b border-[color:var(--color-surface-border-3)] p-5 sm:p-6">
             <SectionHeader
-              label="Teacher gallery"
-              title="Manage Showcase Assets"
+              label="Assets"
+              title="Teacher Assets"
               action={
                 <>
                   {user ? <Button tone="neutral" onClick={handleSignOut}>Sign out</Button> : <Button href={loginHref} tone="gold">Login</Button>}
@@ -581,7 +581,7 @@ export default function CustomCharactersManager({
                 </>
               }
             >
-              Create, edit, and remove teacher fighters and arenas with cleaner filters, larger previews, and a focused editor.
+              Create, edit, and remove teacher fighters and arenas before they move into showcase publication and arena play.
             </SectionHeader>
           </div>
 
@@ -592,14 +592,14 @@ export default function CustomCharactersManager({
 
               {!user ? (
                 <EmptyState title="Login required" action={<Button href={loginHref} tone="gold">Login</Button>}>
-                  Sign in as a teacher to manage gallery assets.
+                  Sign in as a teacher to manage teacher assets.
                 </EmptyState>
               ) : (
                 <>
                   <Panel className="p-4 sm:p-5">
                     <div className="grid gap-4 lg:grid-cols-[minmax(260px,360px)_auto] lg:items-end lg:justify-between">
                       <label className="grid gap-2">
-                        <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Search gallery</span>
+                        <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Search assets</span>
                         <input
                           value={searchTerm}
                           onChange={(event) => setSearchTerm(event.target.value)}
@@ -628,11 +628,11 @@ export default function CustomCharactersManager({
                   </Panel>
 
                   {isLoading ? (
-                    <EmptyState title="Loading gallery">Fetching your teacher assets.</EmptyState>
+                    <EmptyState title="Loading teacher assets">Fetching your teacher assets.</EmptyState>
                   ) : galleryItems.length === 0 ? (
-                    <EmptyState title="No assets match this filter">Create a fighter or arena to start building the teacher showcase.</EmptyState>
+                    <EmptyState title="No assets match this filter">Create a fighter or arena to start building teacher assets.</EmptyState>
                   ) : (
-                    <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                    <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                       {galleryItems.map((item) => {
                         const id = item._id || item.id;
                         const isFighterAsset = item.assetType === "fighter";
@@ -739,6 +739,10 @@ export default function CustomCharactersManager({
                         <DropZone label="ICON" value={fighterDraft.iconSrc} onFile={(file) => setFighterDraft((previous) => ({ ...previous, iconSrc: filePreview(file), iconFile: file }))} accept="image/*" hint={"ICON\nPNG/JPG"} />
                         <DropZone label="ART GIF / VIDEO" value={fighterDraft.artSrc} onFile={(file) => setFighterDraft((previous) => ({ ...previous, artSrc: filePreview(file), artFile: file }))} accept="image/gif,video/*" hint={"GIF / WEBM / MOV"} />
                       </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <DropZone label="MOVE LEFT" value={fighterDraft.moveLeftArtSrc} onFile={(file) => setFighterDraft((previous) => ({ ...previous, moveLeftArtSrc: filePreview(file), moveLeftArtFile: file }))} onClear={() => setFighterDraft((previous) => ({ ...previous, moveLeftArtSrc: null, moveLeftArtFile: null }))} accept="image/gif,video/*" hint={"OPTIONAL LEFT"} aspectRatio="1 / 1.35" />
+                        <DropZone label="MOVE RIGHT" value={fighterDraft.moveRightArtSrc} onFile={(file) => setFighterDraft((previous) => ({ ...previous, moveRightArtSrc: filePreview(file), moveRightArtFile: file }))} onClear={() => setFighterDraft((previous) => ({ ...previous, moveRightArtSrc: null, moveRightArtFile: null }))} accept="image/gif,video/*" hint={"OPTIONAL RIGHT"} aspectRatio="1 / 1.35" />
+                      </div>
                       <label className="grid gap-2">
                         <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Name</span>
                         <input value={fighterDraft.name} onChange={(event) => setFighterDraft((previous) => ({ ...previous, name: event.target.value.toUpperCase() }))} placeholder="Fighter name" className={inputClass} />
@@ -750,6 +754,14 @@ export default function CustomCharactersManager({
                       <label className="grid gap-2">
                         <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Theme color</span>
                         <input type="color" value={fighterDraft.color} onChange={(event) => setFighterDraft((previous) => ({ ...previous, color: event.target.value }))} className={`${inputClass} h-12 p-1`} />
+                      </label>
+                      <label className="grid gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Lore</span>
+                        <textarea value={fighterDraft.lore} onChange={(event) => setFighterDraft((previous) => ({ ...previous, lore: event.target.value }))} rows={3} maxLength={260} placeholder="Optional backstory" className={`${inputClass} resize-none leading-6`} />
+                      </label>
+                      <label className="grid gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Entrance quote</span>
+                        <input value={fighterDraft.entranceQuote} onChange={(event) => setFighterDraft((previous) => ({ ...previous, entranceQuote: event.target.value }))} maxLength={120} placeholder="Optional one-line quote" className={inputClass} />
                       </label>
                     </>
                   ) : (
@@ -763,11 +775,21 @@ export default function CustomCharactersManager({
                         <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Description</span>
                         <textarea value={arenaDraft.description} onChange={(event) => setArenaDraft((previous) => ({ ...previous, description: event.target.value }))} rows={4} maxLength={220} placeholder="Short stage description" className={`${inputClass} resize-none leading-6`} />
                       </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="grid gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Icon</span>
+                          <input value={arenaDraft.icon} onChange={(event) => setArenaDraft((previous) => ({ ...previous, icon: event.target.value.slice(0, 4) || "*" }))} placeholder="*" className={inputClass} />
+                        </label>
+                        <label className="grid gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--color-text-muted-8)]">Difficulty {arenaDraft.difficulty}</span>
+                          <input type="range" min="1" max="6" value={arenaDraft.difficulty} onChange={(event) => setArenaDraft((previous) => ({ ...previous, difficulty: Number(event.target.value) || 1 }))} className="h-12 w-full accent-[var(--gold)]" />
+                        </label>
+                      </div>
                     </>
                   )}
 
                   <Button tone="gold" onClick={handleSave} disabled={isSaving || !activeCanSave}>
-                    {isSaving ? "Saving" : activeDraft._id ? "Save changes" : "Add asset"}
+                    {isSaving ? "Saving" : activeDraft._id || activeDraft.id ? "Save changes" : "Add asset"}
                   </Button>
                 </div>
               </Panel>
@@ -786,10 +808,10 @@ export default function CustomCharactersManager({
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: modal ? "min(1800px, calc(100vw - 32px))" : "calc(100vw - 32px)", maxWidth: modal ? undefined : 1880, minHeight: modal ? "88vh" : "calc(100vh - 72px)", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(5,7,16,0.95)", boxShadow: "0 24px 80px rgba(0,0,0,0.45)", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={modal ? (event) => event.stopPropagation() : undefined}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.45em", color: "#8d93a8" }}>{isTeacherGalleryTab ? "MY GALLERY" : "CLASS CONTENT"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.45em", color: "#8d93a8" }}>{isTeacherGalleryTab ? "TEACHER ASSETS" : "CLASS CONTENT"}</div>
             <div style={{ marginTop: 8, color: "rgba(255,255,255,0.56)", fontSize: 14, letterSpacing: "0.1em" }}>
               {isTeacherGalleryTab
-                ? "Manage your teacher fighters and arenas."
+                ? "Manage teacher fighters and arenas."
                 : currentClass
                   ? `${currentClass.name} . ${classCountText}`
                   : isAdmin
@@ -886,7 +908,7 @@ export default function CustomCharactersManager({
                   <div>
                     {isTeacherGalleryTab ? (
                       <>
-                        <div style={{ fontFamily: "var(--font-display)", fontSize: 15, letterSpacing: "0.18em", color: GOLD }}>MY GALLERY</div>
+                        <div style={{ fontFamily: "var(--font-display)", fontSize: 15, letterSpacing: "0.18em", color: GOLD }}>TEACHER ASSETS</div>
                         <div style={{ marginTop: 6, color: "#8d93a8", fontSize: 11, letterSpacing: "0.18em" }}>YOUR TEACHER ASSETS . {managedClasses.length} CLASSES AVAILABLE</div>
                       </>
                     ) : currentClass ? (
@@ -953,7 +975,7 @@ export default function CustomCharactersManager({
 
                 {isAdmin || readOnly ? (
                   <div style={{ marginBottom: 16, maxWidth: 360 }}>
-                    <Field label={isStudentsTab ? "Search Students" : isTeacherGalleryTab ? "Filter My Gallery" : "Search Showcase"}>
+                    <Field label={isStudentsTab ? "Search Students" : isTeacherGalleryTab ? "Filter Teacher Assets" : "Search Showcase"}>
                       <input
                         value={searchTerm}
                         onChange={(event) => setSearchTerm(event.target.value)}

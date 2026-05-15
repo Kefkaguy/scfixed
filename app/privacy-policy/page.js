@@ -155,7 +155,7 @@ const sections = [
         bullets: [
           "Users can edit or remove their own uploads where the interface allows it.",
           "Teachers can manage classes, lock or unlock classes, and moderate classroom content flow.",
-          "Teachers can edit or remove their own teacher-created gallery assets and choose whether those assets are visible in one class or all classes.",
+          "Teachers can edit or remove their own teacher assets and choose whether those assets are visible in one class or all classes.",
           "Students can join classes and switch active class context through the app's available controls.",
         ],
       },

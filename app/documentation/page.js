@@ -8,8 +8,8 @@ const sections = [
       {
         heading: "What This Website Is",
         paragraphs: [
-          "Digital Art Battle is a classroom-focused web app that combines a fighting-game-style character select experience with class management, student uploads, and teacher showcase controls.",
-          "The current version centers the experience around a single main dashboard, with active class context driving uploads, class showcases, and the arena picker.",
+          "Digital Art Battle is a classroom-focused web app organized around assets, moderation, publication, and gameplay.",
+          "The current version centers the experience around teacher assets, student submissions, the approval system, showcase publication, and arena play.",
         ],
       },
     ],
@@ -33,7 +33,7 @@ const sections = [
           "Creates classes and controls class size",
           "Activates a class for the current browsing context",
           "Views uploaded class content",
-          "Uses My Gallery from the teacher dashboard to manage teacher-created fighters and arenas separately from any one class",
+          "Uses Teacher Assets to manage teacher-created fighters and arenas separately from any one class",
           "Can make teacher-created fighters and arenas visible in one class or across all classes",
           "Uses a joined-students roster inside class content",
           "Can remove students from a class when moderation is needed",
@@ -62,7 +62,7 @@ const sections = [
         ],
       },
       {
-        heading: "Arena Picker",
+        heading: "Arena / Play",
         bullets: [
           "Route: /arena",
           "Contains the mode select, level select, and character draft flow",
@@ -81,9 +81,10 @@ const sections = [
         ],
       },
       {
-        heading: "Teacher Gallery",
+        heading: "Teacher Assets",
         bullets: [
-          "Opened from the teacher dashboard using the My Gallery action",
+          "Route: /teacher-assets",
+          "Opened from the teacher dashboard using the Teacher Assets action",
           "Shows teacher-created fighters and arenas as a separate management view",
           "Supports filtering between all teacher assets, only fighters, and only arenas",
           "New teacher assets can target one class or all classes",
@@ -100,7 +101,7 @@ const sections = [
     ],
   },
   {
-    title: "Student Workflow",
+    title: "Student Submissions",
     icon: "#",
     content: [
       {
@@ -126,7 +127,7 @@ const sections = [
           "Change the temporary password if prompted",
           "Create classes and distribute join codes",
           "Monitor upload counts and class participation from the home dashboard",
-          "Open My Gallery from the dashboard to manage teacher-owned fighters and arenas",
+          "Open Teacher Assets from the dashboard to manage teacher-owned fighters and arenas",
           "Choose whether teacher-owned uploads appear in one class or all classes",
           "Set a class active",
           "Open that class's showcase content",

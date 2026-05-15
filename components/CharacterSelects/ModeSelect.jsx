@@ -16,7 +16,7 @@ export default function ModeSelect({ onSelect }) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 mx-auto grid min-h-screen w-full max-w-7xl content-center gap-6 px-4 py-8 sm:px-6 lg:px-8"
+        className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1800px] content-center gap-6 px-4 py-8 sm:px-6 lg:px-8 2xl:px-10"
       >
         <header className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-3 no-underline">

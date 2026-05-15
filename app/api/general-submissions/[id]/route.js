@@ -2,10 +2,36 @@ import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { auth, isTeacherRequest } from "@/lib/auth";
 import { getSubmissionsCollection } from "@/lib/mongodb";
+import { deleteFileFromS3, getS3KeyFromUrl, uploadFileToS3 } from "@/lib/s3";
 const RECOVERY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function idQuery(id) {
   return ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
+}
+
+function normalizeText(value, fallback = "") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function normalizeColor(value, fallback) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+async function replaceUpload({ formData, field, folder, namePrefix, currentSrc, currentKey }) {
+  const file = formData?.get(field);
+  if (!(file instanceof File) || file.size <= 0) {
+    return {
+      src: currentSrc || null,
+      key: currentKey || getS3KeyFromUrl(currentSrc) || null,
+    };
+  }
+
+  const upload = await uploadFileToS3({ file, folder, namePrefix });
+  const existingKey = currentKey || getS3KeyFromUrl(currentSrc);
+  if (existingKey && existingKey !== upload.key) {
+    await deleteFileFromS3(existingKey);
+  }
+  return { src: upload.url, key: upload.key };
 }
 
 export async function PATCH(request, { params }) {
@@ -17,8 +43,11 @@ export async function PATCH(request, { params }) {
     }
 
     const { id } = await params;
-    const payload = await request.json();
-    const action = String(payload?.action || "").toLowerCase();
+    const contentType = request.headers.get("content-type") || "";
+    const formData = contentType.includes("multipart/form-data") ? await request.formData() : null;
+    const payload = formData ? null : await request.json();
+    const readValue = (key) => formData ? formData.get(key) : payload?.[key];
+    const action = String(readValue("action") || "").toLowerCase();
     const allowedActions = new Set(["approve", "deny", "hide", "show", "edit", "restore"]);
     if (!allowedActions.has(action)) {
       return NextResponse.json({ error: "Choose a valid moderation action." }, { status: 400 });
@@ -26,9 +55,11 @@ export async function PATCH(request, { params }) {
 
     const now = new Date();
     const set = { updatedAt: now };
+    const submissionsCollection = await getSubmissionsCollection();
+    const existingSubmission = action === "restore" || action === "edit"
+      ? await submissionsCollection.findOne(idQuery(id))
+      : null;
     if (action === "restore") {
-      const submissionsCollection = await getSubmissionsCollection();
-      const existingSubmission = await submissionsCollection.findOne(idQuery(id));
       if (!existingSubmission) {
         return NextResponse.json({ error: "Submission not found." }, { status: 404 });
       }
@@ -60,14 +91,100 @@ export async function PATCH(request, { params }) {
       set.restoredByUserName = session?.user?.name || "Teacher";
     }
     if (action === "edit") {
-      if (typeof payload.name === "string" && payload.name.trim()) set.name = payload.name.trim().toUpperCase();
-      if (typeof payload.description === "string") set.description = payload.description.trim();
-      if (typeof payload.period === "string") set.period = payload.period.trim();
-      if (typeof payload.studentName === "string" && payload.studentName.trim()) set.studentName = payload.studentName.trim();
-      if (typeof payload.email === "string") set.email = payload.email.trim() || null;
+      if (!existingSubmission) {
+        return NextResponse.json({ error: "Submission not found." }, { status: 404 });
+      }
+
+      const name = normalizeText(readValue("name"), existingSubmission.name).toUpperCase();
+      if (!name) {
+        return NextResponse.json({ error: "Asset name is required." }, { status: 400 });
+      }
+
+      set.name = name;
+      set.description = normalizeText(readValue("description"));
+      set.period = normalizeText(readValue("period"));
+      set.studentName = normalizeText(readValue("studentName"), existingSubmission.studentName || "Student");
+      set.email = normalizeText(readValue("email")) || null;
+
+      if (existingSubmission.assetType === "fighter") {
+        set.color = normalizeColor(readValue("color"), existingSubmission.color || "#e8001a");
+        set.accent = set.color;
+        set.bgTint = set.color;
+        set.lore = normalizeText(readValue("lore"));
+        set.entranceQuote = normalizeText(readValue("entranceQuote"));
+
+        const iconUpload = await replaceUpload({
+          formData,
+          field: "iconFile",
+          folder: "character-icons",
+          namePrefix: name,
+          currentSrc: existingSubmission.iconSrc,
+          currentKey: existingSubmission.iconKey,
+        });
+        const artUpload = await replaceUpload({
+          formData,
+          field: "artFile",
+          folder: "character-art",
+          namePrefix: name,
+          currentSrc: existingSubmission.artSrc,
+          currentKey: existingSubmission.artKey,
+        });
+        const moveLeftUpload = await replaceUpload({
+          formData,
+          field: "moveLeftArtFile",
+          folder: "character-art",
+          namePrefix: `${name}-left`,
+          currentSrc: existingSubmission.moveLeftArtSrc,
+          currentKey: existingSubmission.moveLeftArtKey,
+        });
+        const moveRightUpload = await replaceUpload({
+          formData,
+          field: "moveRightArtFile",
+          folder: "character-art",
+          namePrefix: `${name}-right`,
+          currentSrc: existingSubmission.moveRightArtSrc,
+          currentKey: existingSubmission.moveRightArtKey,
+        });
+
+        set.iconSrc = iconUpload.src;
+        set.iconKey = iconUpload.key;
+        set.artSrc = artUpload.src;
+        set.artKey = artUpload.key;
+        set.moveLeftArtSrc = moveLeftUpload.src;
+        set.moveLeftArtKey = moveLeftUpload.key;
+        set.moveRightArtSrc = moveRightUpload.src;
+        set.moveRightArtKey = moveRightUpload.key;
+
+        if (formData?.get("clearMoveLeftArt") === "1") {
+          const key = existingSubmission.moveLeftArtKey || getS3KeyFromUrl(existingSubmission.moveLeftArtSrc);
+          if (key) await deleteFileFromS3(key);
+          set.moveLeftArtSrc = null;
+          set.moveLeftArtKey = null;
+        }
+        if (formData?.get("clearMoveRightArt") === "1") {
+          const key = existingSubmission.moveRightArtKey || getS3KeyFromUrl(existingSubmission.moveRightArtSrc);
+          if (key) await deleteFileFromS3(key);
+          set.moveRightArtSrc = null;
+          set.moveRightArtKey = null;
+        }
+      }
+
+      if (existingSubmission.assetType === "arena") {
+        set.icon = normalizeText(readValue("icon"), existingSubmission.icon || "*");
+        set.difficulty = Math.min(10, Math.max(1, Number.parseInt(String(readValue("difficulty") || existingSubmission.difficulty || "1"), 10) || 1));
+        const bgUpload = await replaceUpload({
+          formData,
+          field: "bgFile",
+          folder: "arena-backgrounds",
+          namePrefix: name,
+          currentSrc: existingSubmission.bgSrc,
+          currentKey: existingSubmission.bgKey,
+        });
+        set.bgSrc = bgUpload.src;
+        set.bgKey = bgUpload.key;
+      }
     }
 
-    const submissionsCollection = await getSubmissionsCollection();
     const result = await submissionsCollection.findOneAndUpdate(
       idQuery(id),
       {

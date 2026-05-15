@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomCharactersManager from "@/components/CharacterSelects/CustomCharactersManager";
+import SubmissionEditModal from "@/components/SubmissionEditModal";
 import {
   Alert,
   AppShell,
@@ -132,6 +133,7 @@ export default function HomeHub() {
   const [busyId, setBusyId] = useState("");
   const [managerOpen, setManagerOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState(null);
 
   const isTeacher = Boolean(session?.isAdmin || (session?.user?.role === "teacher" && !session?.user?.mustChangePassword));
 
@@ -235,24 +237,16 @@ export default function HomeHub() {
   }
 
   async function handleAction(id, action, item = null) {
+    if (action === "edit") {
+      setEditingSubmission(item);
+      return;
+    }
+
     setBusyId(id);
     setError("");
     setStatus("");
     try {
       let body = { action };
-      if (action === "edit") {
-        const name = window.prompt("Asset name", item?.name || "");
-        if (name === null) return;
-        const description = window.prompt("Description", item?.description || "");
-        if (description === null) return;
-        const studentName = window.prompt("Student name", item?.studentName || "");
-        if (studentName === null) return;
-        const email = window.prompt("Email", item?.email || "");
-        if (email === null) return;
-        const period = window.prompt("Period / class", item?.period || "");
-        if (period === null) return;
-        body = { action, name, description, studentName, email, period };
-      }
       const response = await fetch(`/api/general-submissions/${id}`, {
         method: action === "delete" ? "DELETE" : "PATCH",
         headers: action === "delete" ? undefined : { "Content-Type": "application/json" },
@@ -281,12 +275,13 @@ export default function HomeHub() {
                 Digital Art Battle
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-text-muted)]">
-                A classroom art competition hub where students upload fighters and arenas, then teachers approve work for the public showcase and play arena.
+                Upload assets, approve submissions, publish the showcase, and play.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Button href="/arena" tone="gold">Play arena</Button>
-                <Button href="/showcase" tone="blue">View showcase</Button>
-                <Button onClick={() => setUploadOpen(true)} tone="green">Upload art</Button>
+                <Button onClick={() => setUploadOpen(true)} tone="green">Student Submissions</Button>
+                <Button href="/gif-editor" tone="neutral">GIF Editor</Button>
+                <Button href="/showcase" tone="blue">Showcase</Button>
+                <Button href="/arena" tone="gold">Arena / Play</Button>
               </div>
             </div>
             <div className="grid gap-3 rounded-lg border border-[color:var(--color-surface-border-4)] bg-black/25 p-4">
@@ -315,12 +310,15 @@ export default function HomeHub() {
 
         <section className="grid gap-4">
           <SectionHeader
-            label="Student workflow"
-            title="Upload for the battle"
-            action={<Button tone={uploadOpen ? "neutral" : "gold"} onClick={() => setUploadOpen((open) => !open)}>{uploadOpen ? "Close upload" : "Open upload"}</Button>}
-          >
-            Test an asset for 12 hours or submit it to the teacher approval queue. Required fields stay visible and grouped by task.
-          </SectionHeader>
+            label="Assets"
+            title="Student Submissions"
+            action={
+              <>
+                <Button href="/gif-editor" tone="neutral">GIF Editor</Button>
+                <Button tone={uploadOpen ? "neutral" : "gold"} onClick={() => setUploadOpen((open) => !open)}>{uploadOpen ? "Close upload" : "Open upload"}</Button>
+              </>
+            }
+          />
 
           <AnimatePresence initial={false}>
             {uploadOpen ? (
@@ -431,17 +429,15 @@ export default function HomeHub() {
         {isTeacher ? (
           <section className="grid gap-4">
             <SectionHeader
-              label="Teacher dashboard"
-              title="Review and publish submissions"
+              label="Moderation"
+              title="Approval System"
               action={
                 <>
-                  <Button href="/student-work" tone="blue">Student work</Button>
-                  <Button onClick={() => setManagerOpen(true)} tone="gold">Teacher gallery</Button>
+                  <Button href="/student-work" tone="blue">Student Submissions</Button>
+                  <Button onClick={() => setManagerOpen(true)} tone="gold">Teacher Assets</Button>
                 </>
               }
-            >
-              Manage the queue, filter by class period, and keep the public showcase clean.
-            </SectionHeader>
+            />
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Student uploads" value={counts.total} tone="gold" />
@@ -484,6 +480,17 @@ export default function HomeHub() {
       </div>
 
       {managerOpen ? <CustomCharactersManager modal onClose={() => setManagerOpen(false)} initialTab="my-gallery" /> : null}
+      {editingSubmission ? (
+        <SubmissionEditModal
+          item={editingSubmission}
+          onClose={() => setEditingSubmission(null)}
+          onSaved={async () => {
+            setEditingSubmission(null);
+            setStatus("Submission edited.");
+            await loadSubmissions();
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }

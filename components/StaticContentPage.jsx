@@ -15,7 +15,7 @@ function SectionCard({ section, accent }) {
         </div>
         <div className="grid gap-6 p-5 sm:p-6">
           {section.content.map((block) => (
-            <div key={block.heading} className="max-w-4xl">
+            <div key={block.heading} className="max-w-6xl">
               <h3 className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: accent }}>{block.heading}</h3>
               {block.paragraphs?.map((paragraph) => (
                 <p key={paragraph} className="mt-3 text-sm leading-7 text-[var(--color-text-muted)]">{paragraph}</p>

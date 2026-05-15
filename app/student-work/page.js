@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import SubmissionEditModal from "@/components/SubmissionEditModal";
 import {
   Alert,
   AppShell,
@@ -29,12 +30,12 @@ function formatRecovery(value) {
 }
 
 function actionMessage(action) {
-  if (action === "delete") return "Student work moved to deleted. It can be restored for 24 hours.";
-  if (action === "restore") return "Student work restored.";
-  if (action === "edit") return "Student work edited.";
-  if (action === "hide") return "Student work hidden.";
-  if (action === "show") return "Student work shown.";
-  return "Student work updated.";
+  if (action === "delete") return "Asset moved to deleted. It can be restored for 24 hours.";
+  if (action === "restore") return "Asset restored.";
+  if (action === "edit") return "Asset edited.";
+  if (action === "hide") return "Asset hidden.";
+  if (action === "show") return "Asset shown.";
+  return "Asset updated.";
 }
 
 function StudentWorkCard({ item, mode, onAction, busyId }) {
@@ -100,6 +101,7 @@ export default function StudentWorkPage() {
   const [busyId, setBusyId] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("approved");
+  const [editingSubmission, setEditingSubmission] = useState(null);
 
   const isTeacher = Boolean(session?.isAdmin || (session?.user?.role === "teacher" && !session?.user?.mustChangePassword));
 
@@ -155,39 +157,36 @@ export default function StudentWorkPage() {
 
   const studentSubmissions = useMemo(() => submissions.filter((item) => String(item?.createdByRole || "student").toLowerCase() !== "teacher"), [submissions]);
   const studentDeletedSubmissions = useMemo(() => deletedSubmissions.filter((item) => String(item?.createdByRole || "student").toLowerCase() !== "teacher"), [deletedSubmissions]);
+  const teacherSubmissions = useMemo(() => submissions.filter((item) => String(item?.createdByRole || "").toLowerCase() === "teacher"), [submissions]);
+  const teacherDeletedSubmissions = useMemo(() => deletedSubmissions.filter((item) => String(item?.createdByRole || "").toLowerCase() === "teacher"), [deletedSubmissions]);
   const visibleWork = useMemo(() => studentSubmissions.filter((item) => item.status === "approved" && !item.isHidden), [studentSubmissions]);
   const hiddenWork = useMemo(() => studentSubmissions.filter((item) => item.status === "approved" && item.isHidden), [studentSubmissions]);
   const pendingWork = useMemo(() => studentSubmissions.filter((item) => item.status === "pending"), [studentSubmissions]);
+  const teacherAssets = useMemo(() => teacherSubmissions.filter((item) => item.status !== "deleted"), [teacherSubmissions]);
 
   const tabConfig = useMemo(
     () => ({
-      approved: { label: "Approved", count: visibleWork.length, mode: "visible", items: visibleWork, empty: "No approved student work matches this filter.", tone: "green" },
-      hidden: { label: "Hidden", count: hiddenWork.length, mode: "hidden", items: hiddenWork, empty: "No hidden student work matches this filter.", tone: "gold" },
-      deleted: { label: "Deleted", count: studentDeletedSubmissions.length, mode: "deleted", items: studentDeletedSubmissions, empty: "No recoverable deleted student work.", tone: "red" },
+      approved: { label: "Approved", title: "Approved submissions", count: visibleWork.length, mode: "visible", items: visibleWork, empty: "No approved student work matches this filter.", tone: "green" },
+      hidden: { label: "Hidden", title: "Hidden submissions", count: hiddenWork.length, mode: "hidden", items: hiddenWork, empty: "No hidden student work matches this filter.", tone: "gold" },
+      deleted: { label: "Deleted", title: "Deleted submissions", count: studentDeletedSubmissions.length, mode: "deleted", items: studentDeletedSubmissions, empty: "No recoverable deleted student work.", tone: "red" },
+      teacher: { label: "Teacher Assets", title: "Teacher Assets", count: teacherAssets.length, mode: "visible", items: teacherAssets, empty: "No teacher showcase assets match this filter.", tone: "blue" },
+      teacherDeleted: { label: "Deleted Teacher Assets", title: "Deleted Teacher Assets", count: teacherDeletedSubmissions.length, mode: "deleted", items: teacherDeletedSubmissions, empty: "No recoverable deleted teacher assets.", tone: "red" },
     }),
-    [hiddenWork, studentDeletedSubmissions, visibleWork]
+    [hiddenWork, studentDeletedSubmissions, teacherAssets, teacherDeletedSubmissions, visibleWork]
   );
   const activeTabConfig = tabConfig[activeTab] || tabConfig.approved;
 
   async function handleAction(id, action, item = null) {
+    if (action === "edit") {
+      setEditingSubmission(item);
+      return;
+    }
+
     setBusyId(id);
     setError("");
     setStatus("");
     try {
       let body = { action };
-      if (action === "edit") {
-        const name = window.prompt("Asset name", item?.name || "");
-        if (name === null) return;
-        const description = window.prompt("Description", item?.description || "");
-        if (description === null) return;
-        const studentName = window.prompt("Student name", item?.studentName || "");
-        if (studentName === null) return;
-        const email = window.prompt("Email", item?.email || "");
-        if (email === null) return;
-        const period = window.prompt("Period / class", item?.period || "");
-        if (period === null) return;
-        body = { action, name, description, studentName, email, period };
-      }
       const response = await fetch(`/api/general-submissions/${id}`, {
         method: action === "delete" ? "DELETE" : "PATCH",
         headers: action === "delete" ? undefined : { "Content-Type": "application/json" },
@@ -209,8 +208,8 @@ export default function StudentWorkPage() {
       <TopNav session={session} />
       <div className="grid gap-5">
         <Panel className="p-5 sm:p-7">
-          <SectionHeader label="Teacher review" title="Student Work">
-            Review approved, hidden, and recently deleted submissions without leaving the teacher workspace.
+          <SectionHeader label="Assets" title="Student Submissions">
+            Review approved, hidden, and recently deleted student submissions without leaving the teacher workspace.
           </SectionHeader>
         </Panel>
 
@@ -219,7 +218,7 @@ export default function StudentWorkPage() {
 
         {!loading && !isTeacher ? (
           <EmptyState title="Teacher login required" action={<Button href="/login?callbackUrl=/student-work" tone="gold">Login</Button>}>
-            Student work controls are limited to teachers.
+            Student submission controls are limited to teachers.
           </EmptyState>
         ) : null}
 
@@ -258,7 +257,7 @@ export default function StudentWorkPage() {
             </Panel>
 
             <section className="grid gap-4">
-              <SectionHeader label={`${activeTabConfig.count} items`} title={`${activeTabConfig.label} submissions`} />
+              <SectionHeader label={`${activeTabConfig.count} items`} title={activeTabConfig.title} />
               {activeTabConfig.items.length ? (
                 <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4">
                   {activeTabConfig.items.map((item) => (
@@ -272,6 +271,17 @@ export default function StudentWorkPage() {
           </>
         ) : null}
       </div>
+      {editingSubmission ? (
+        <SubmissionEditModal
+          item={editingSubmission}
+          onClose={() => setEditingSubmission(null)}
+          onSaved={async () => {
+            setEditingSubmission(null);
+            setStatus(actionMessage("edit"));
+            await loadSubmissions();
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }

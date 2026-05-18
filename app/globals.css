@@ -195,11 +195,22 @@ a { color: inherit; }
   to { transform: scale(1); opacity: 1; }
 }
 
+@keyframes preloader-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+
 .anim-left { animation: slideInLeft 0.35s cubic-bezier(0.22,1,0.36,1) both; }
 .anim-right { animation: slideInRight 0.35s cubic-bezier(0.22,1,0.36,1) both; -webkit-animation: slideInRight 0.35s cubic-bezier(0.22,1,0.36,1) both; }
 .anim-zoom { animation: zoomIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
 
 .name-flicker { animation: flicker 4s infinite; }
+
+.preloader-progress {
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--color-danger), transparent);
+  animation: preloader-progress 1.05s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
 
 /* gold shimmer text */
 .gold-text {

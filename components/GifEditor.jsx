@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { GIFEncoder, applyPalette, quantize } from "gifenc";
 import { Alert, AppShell, Button, Field, Panel, SectionHeader, TopNav, inputClass } from "@/components/ui/AppUI";
 
 const DEFAULT_SIZE = 512;
 const GIF_FPS = 10;
+const GIF_EDITOR_CONTEXT_PREFIX = "digital-art-battle:gif-editor:";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -17,6 +19,48 @@ function isVideoFile(file) {
 
 function isImageFile(file) {
   return file?.type?.startsWith("image/");
+}
+
+function proxiedMediaUrl(src) {
+  if (!src) return "";
+  if (/^https?:\/\//i.test(src)) {
+    return `/api/media-proxy?url=${encodeURIComponent(src)}`;
+  }
+  return src;
+}
+
+function extensionFromContentType(contentType) {
+  const type = String(contentType || "").split(";")[0].trim().toLowerCase();
+  if (type === "image/png") return "png";
+  if (type === "image/jpeg") return "jpg";
+  if (type === "image/gif") return "gif";
+  if (type === "image/webp") return "webp";
+  if (type === "video/webm") return "webm";
+  if (type === "video/mp4") return "mp4";
+  if (type === "video/quicktime") return "mov";
+  return "";
+}
+
+function extensionFromUrl(src, contentType) {
+  const fromType = extensionFromContentType(contentType);
+  if (fromType) return fromType;
+
+  try {
+    const path = new URL(src, window.location.origin).pathname;
+    const match = path.match(/\.([a-z0-9]{2,5})$/i);
+    return match ? match[1].toLowerCase() : "gif";
+  } catch {
+    return "gif";
+  }
+}
+
+function sanitizeFileName(value, fallback = "fighter") {
+  return String(value || fallback)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || fallback;
 }
 
 function hexToRgb(hex) {
@@ -75,6 +119,7 @@ function seekMedia(media, time) {
 }
 
 export default function GifEditor() {
+  const searchParams = useSearchParams();
   const canvasRef = useRef(null);
   const mediaRef = useRef(null);
   const dragRef = useRef(null);
@@ -82,13 +127,17 @@ export default function GifEditor() {
   const gifFramesRef = useRef([]);
   const animationStartRef = useRef(Date.now());
   const [file, setFile] = useState(null);
+  const [editContext, setEditContext] = useState(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [gifFrameCount, setGifFrameCount] = useState(0);
   const [outputUrl, setOutputUrl] = useState("");
   const [outputName, setOutputName] = useState("");
+  const [outputBlob, setOutputBlob] = useState(null);
+  const [outputKind, setOutputKind] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isUpdatingSource, setIsUpdatingSource] = useState(false);
   const [tool, setTool] = useState("crop");
   const [crop, setCrop] = useState({ x: 64, y: 64, width: 384, height: 384 });
   const [backgroundRemoval, setBackgroundRemoval] = useState({
@@ -99,7 +148,7 @@ export default function GifEditor() {
   const [settings, setSettings] = useState({
     width: DEFAULT_SIZE,
     height: DEFAULT_SIZE,
-    zoom: 1.2,
+    zoom: 1,
     x: 0,
     y: 0,
     background: "#000000",
@@ -114,6 +163,53 @@ export default function GifEditor() {
   }, [file]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadEditContext() {
+      const editKey = searchParams.get("editKey");
+      if (!editKey) return;
+
+      const rawContext = window.sessionStorage.getItem(`${GIF_EDITOR_CONTEXT_PREFIX}${editKey}`);
+      if (!rawContext) {
+        setError("Could not find the selected showcase GIF. Go back to Showcase and choose Edit GIF again.");
+        return;
+      }
+
+      try {
+        const parsedContext = JSON.parse(rawContext);
+        const src = parsedContext?.sourceSrc;
+        if (!src) throw new Error("The selected fighter does not have a GIF/video source.");
+
+        setEditContext(parsedContext);
+        setStatus(`Loading ${parsedContext?.sourceLabel || "selected fighter"} into the editor.`);
+
+        const response = await fetch(proxiedMediaUrl(src), { cache: "no-store" });
+        if (!response.ok) throw new Error("Could not load the selected GIF/video.");
+
+        const contentType = response.headers.get("Content-Type") || "image/gif";
+        const extension = extensionFromUrl(src, contentType);
+        const blob = await response.blob();
+        const loadedFile = new File(
+          [blob],
+          `${sanitizeFileName(parsedContext?.sourceLabel, "fighter")}.${extension}`,
+          { type: contentType || blob.type || "image/gif" }
+        );
+
+        if (!cancelled) {
+          setFile(loadedFile);
+          setStatus(`${parsedContext?.sourceLabel || "Selected fighter"} is ready to edit.`);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Could not load the selected GIF.");
+      }
+    }
+
+    loadEditContext();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
+  useEffect(() => {
     if (!file) {
       setSourceUrl("");
       return;
@@ -122,6 +218,8 @@ export default function GifEditor() {
     setSourceUrl(nextUrl);
     setOutputUrl("");
     setOutputName("");
+    setOutputBlob(null);
+    setOutputKind("");
     setCrop({ x: 64, y: 64, width: 384, height: 384 });
     gifFramesRef.current.forEach((frame) => frame.image?.close?.());
     gifFramesRef.current = [];
@@ -219,9 +317,9 @@ export default function GifEditor() {
   function renderSource(ctx, source, width, height, includeOverlay) {
     const size = sourceSize(source);
     if (!size.width || !size.height) return;
-    const coverScale = Math.max(width / size.width, height / size.height) * Number(settings.zoom || 1);
-    const drawWidth = size.width * coverScale;
-    const drawHeight = size.height * coverScale;
+    const containScale = Math.min(width / size.width, height / size.height) * Number(settings.zoom || 1);
+    const drawWidth = size.width * containScale;
+    const drawHeight = size.height * containScale;
     const drawX = (width - drawWidth) / 2 + Number(settings.x || 0);
     const drawY = (height - drawHeight) / 2 + Number(settings.y || 0);
     try {
@@ -402,25 +500,6 @@ export default function GifEditor() {
     return getExportImageDataFromCanvas(cleanCanvas);
   }
 
-  async function exportPng() {
-    const canvas = canvasRef.current;
-    if (!canvas || !file) return;
-    const source = sourceKind === "gif" && gifFramesRef.current.length ? currentGifFrame()?.image : mediaRef.current;
-    const imageData = renderExportImageData(source || canvas);
-    const outputCanvas = document.createElement("canvas");
-    outputCanvas.width = imageData.width;
-    outputCanvas.height = imageData.height;
-    outputCanvas.getContext("2d").putImageData(imageData, 0, 0);
-    const blob = await new Promise((resolve) => outputCanvas.toBlob(resolve, "image/png"));
-    if (!blob) {
-      setError("Could not export this frame.");
-      return;
-    }
-    if (outputUrl) URL.revokeObjectURL(outputUrl);
-    setOutputUrl(URL.createObjectURL(blob));
-    setOutputName(`${file.name.replace(/\.[^.]+$/, "") || "edited"}-frame.png`);
-    setStatus("PNG frame exported.");
-  }
 
   async function exportGif() {
     const canvas = canvasRef.current;
@@ -461,6 +540,8 @@ export default function GifEditor() {
 
       const blob = encodeGif(frames, Number(settings.width) || DEFAULT_SIZE, Number(settings.height) || DEFAULT_SIZE, fallbackDelayMs);
       if (outputUrl) URL.revokeObjectURL(outputUrl);
+      setOutputBlob(blob);
+      setOutputKind("gif");
       setOutputUrl(URL.createObjectURL(blob));
       setOutputName(`${file.name.replace(/\.[^.]+$/, "") || "edited"}-edited.gif`);
       setStatus("GIF exported with transparent cut areas.");
@@ -471,6 +552,78 @@ export default function GifEditor() {
     }
   }
 
+  function appendCommonFighterFields(formData, item) {
+    formData.set("name", item.name || "UNTITLED");
+    formData.set("description", item.description || "No description added.");
+    formData.set("color", item.color || "#e8001a");
+    formData.set("accent", item.accent || item.color || "#e8001a");
+    formData.set("element", item.element || "*");
+    formData.set("bgTint", item.bgTint || item.color || "#e8001a");
+    formData.set("lore", item.lore || "");
+    formData.set("entranceQuote", item.entranceQuote || "");
+    if (item.classId) formData.set("classId", item.classId);
+    if (item.visibilityScope) formData.set("visibilityScope", item.visibilityScope);
+    if (item.iconSrc) formData.set("iconSrc", item.iconSrc);
+    if (item.artSrc) formData.set("artSrc", item.artSrc);
+    if (item.moveLeftArtSrc) formData.set("moveLeftArtSrc", item.moveLeftArtSrc);
+    if (item.moveRightArtSrc) formData.set("moveRightArtSrc", item.moveRightArtSrc);
+  }
+
+  async function updateSelectedGif() {
+    const item = editContext?.item;
+    if (!item) {
+      setError("No showcase fighter is connected to this edit.");
+      return;
+    }
+    if (!outputBlob || outputKind !== "gif") {
+      setError("Export a GIF first, then update the selected fighter.");
+      return;
+    }
+
+    setIsUpdatingSource(true);
+    setError("");
+    setStatus("");
+
+    try {
+      const formData = new FormData();
+      const editedFile = new File([outputBlob], outputName || `${sanitizeFileName(item.name)}-edited.gif`, { type: outputBlob.type || "image/gif" });
+      formData.set("artFile", editedFile);
+
+      if (item.sourceKind === "submission") {
+        formData.set("action", "edit");
+        formData.set("name", item.name || "UNTITLED");
+        formData.set("description", item.description || "No description added.");
+        formData.set("period", item.period || "");
+        formData.set("studentName", item.studentName || item.createdByUserName || "Student");
+        formData.set("email", item.email || "");
+        formData.set("color", item.color || "#e8001a");
+        formData.set("lore", item.lore || "");
+        formData.set("entranceQuote", item.entranceQuote || "");
+
+        const response = await fetch(`/api/general-submissions/${encodeURIComponent(item.sourceId || item._id || item.id)}`, {
+          method: "PATCH",
+          body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Could not update the selected GIF.");
+      } else {
+        appendCommonFighterFields(formData, item);
+        const response = await fetch(`/api/characters/${encodeURIComponent(item.sourceId || item.id || item._id)}`, {
+          method: "PUT",
+          body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Could not update the selected GIF.");
+      }
+
+      setStatus(`${item.name || "Selected fighter"} updated with the edited GIF.`);
+    } catch (updateError) {
+      setError(updateError.message || "Could not update the selected GIF.");
+    } finally {
+      setIsUpdatingSource(false);
+    }
+  }
+
   return (
     <AppShell>
       <TopNav />
@@ -478,10 +631,11 @@ export default function GifEditor() {
         <Panel className="p-5 sm:p-7">
           <SectionHeader
             label="GIF Editor"
-            title="Cut, Remove Background, Export GIF"
+            title={editContext?.sourceLabel ? `Editing ${editContext.sourceLabel}` : "Cut, Remove Background, Export GIF"}
             action={<Button href="/" tone="neutral">Home</Button>}
           >
             Upload media, drag the crop box like Photoshop, remove a selected background color, and export an animated GIF.
+            {editContext ? " This editor is connected to a showcase fighter, so you can update it after exporting." : ""}
           </SectionHeader>
         </Panel>
 
@@ -538,7 +692,6 @@ export default function GifEditor() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button tone="blue" onClick={exportPng} disabled={!file}>Export PNG</Button>
                 <Button tone="gold" onClick={exportGif} disabled={!file || isRecording}>{isRecording ? "Exporting" : "Export GIF"}</Button>
               </div>
 
@@ -549,6 +702,11 @@ export default function GifEditor() {
                     <a href={outputUrl} download={outputName} className="inline-flex min-h-10 items-center justify-center rounded-md border border-[color:var(--success-52)] bg-[rgba(103,224,143,0.12)] px-4 py-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[var(--color-success)]">
                       Download file
                     </a>
+                    {editContext ? (
+                      <Button tone="gold" disabled={isUpdatingSource || !outputBlob || outputKind !== "gif"} onClick={updateSelectedGif}>
+                        {isUpdatingSource ? "Updating" : "Update selected GIF"}
+                      </Button>
+                    ) : null}
                   </div>
                 </Panel>
               ) : null}

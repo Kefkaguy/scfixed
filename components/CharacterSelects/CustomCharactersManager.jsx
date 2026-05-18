@@ -30,8 +30,8 @@ const INPUT_STYLE = {
   width: "100%",
   outline: "none",
 };
-const ELEMENT_OPTIONS = ["🔥", "⚡", "❄️", "🌊", "🌪️", "☠️", "🌙", "🧪", "🎯", "🏹", "🐾", "🕷️", "🐎", "🌌", "🔮", "⚔️", "🛡️"];
-const ARENA_ICONS = ["⚔️", "🏟️", "🔥", "🌙", "👑", "🌌", "☠️", "🗿", "🌋", "🧊", "🕯️", "🌸"];
+const ELEMENT_OPTIONS = ["FIRE", "VOLT", "ICE", "WAVE", "WIND", "SKUL", "MOON", "LAB", "AIM", "BOW", "PAW", "WEB", "HORS", "VOID", "MAG", "SWRD", "SHLD"];
+const ARENA_ICONS = ["SWRD", "STDM", "FIRE", "MOON", "CROWN", "VOID", "SKUL", "RUIN", "LAVA", "ICE", "LAMP", "BLOOM"];
 const DEFAULT_COLORS = ["#e8001a", "#0077ff", "#ff8800", "#22cc66", "#9933cc", "#00ddcc", "#ffcc00", "#ff44aa"];
 
 function Field({ label, children }) {

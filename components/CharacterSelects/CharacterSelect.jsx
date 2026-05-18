@@ -38,9 +38,9 @@ function getCharacterSearchFields(char) {
   };
 }
 
-export default function CharacterSelect({ publicGallery = false, allowPreloadedAssets = false }) {
+export default function CharacterSelect({ publicGallery = false, allowPreloadedAssets = false, initialMode = null }) {
   const router = useRouter();
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState(initialMode);
   const [level, setLevel] = useState(publicGallery && !allowPreloadedAssets ? null : LEVELS[0]);
   const [p1Rotated, setP1Rotated] = useState(false);
   const [p2Rotated, setP2Rotated] = useState(false);
@@ -54,6 +54,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   const [customChars, setCustomChars] = useState([]);
   const [classSession, setClassSession] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewportWidth, setViewportWidth] = useState(0);
   const allChars = useMemo(
     () => [
       ...(publicGallery && !allowPreloadedAssets ? [] : CHARACTERS),
@@ -115,6 +116,21 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
       cancelled = true;
     };
   }, [publicGallery]);
+
+  useEffect(() => {
+    function updateViewportWidth() {
+      setViewportWidth(window.innerWidth);
+    }
+
+    updateViewportWidth();
+    window.addEventListener("resize", updateViewportWidth);
+    window.visualViewport?.addEventListener("resize", updateViewportWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportWidth);
+      window.visualViewport?.removeEventListener("resize", updateViewportWidth);
+    };
+  }, []);
 
   useEffect(() => {
     if (publicGallery && !allowPreloadedAssets && level && LEVELS.some((item) => item.id === level.id)) {
@@ -180,6 +196,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
   const p1FlavorText = p1DisplayChars[0]?.lore || p1DisplayChars[0]?.description || "";
   const p2FlavorText = p2DisplayChars[0]?.lore || p2DisplayChars[0]?.description || "";
+  const selectArtSize = Math.min((viewportWidth || 875) * 0.32, 520);
 
   const confirmPick = useCallback((char) => {
     if (!mode || done || pickedIds.includes(char.id)) return;
@@ -265,7 +282,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     setP2Rotated(false);
   }
 
-  // Handle mode select — "level-select" is a special signal
+  // Handle mode select. "level-select" is a special signal.
   function handleModeSelect(m) {
     if (m === "level-select") {
       setShowLevelSelect(true);
@@ -277,7 +294,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   // Show ModeSelect
   if (!mode && !showLevelSelect) return <ModeSelect onSelect={handleModeSelect} />;
 
-  // Show LevelSelect (mode still unknown — user picks level first, then mode)
+  // Show LevelSelect while mode is still unknown. User picks level first, then mode.
   if (showLevelSelect && !mode) {
     return (
       <LevelSelect
@@ -352,7 +369,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             NO PUBLIC FIGHTERS
           </div>
           <div style={{ marginTop: 12, color: "#8d93a8", fontSize: 13, lineHeight: 1.7 }}>
-            Add a teacher fighter or enable preloaded assets from the public showcase page.
+            No public fighters yet. Add a teacher fighter or approve a student fighter to fill the showcase.
           </div>
           <button
             type="button"
@@ -481,7 +498,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             color: "#555",
             marginBottom: 2,
           }}>
-            ── CHARACTER SELECT ──
+            -- CHARACTER SELECT --
           </div>
           {classSession?.currentClass && (
             <motion.div
@@ -611,7 +628,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                   transformStyle: "preserve-3d",
                 }}
               >
-                <CharArtStack chars={p1DisplayChars} flipped={false} baseSize={Math.min(typeof window !== "undefined" ? window.innerWidth * 0.32 : 280, 520)} />
+                <CharArtStack chars={p1DisplayChars} flipped={false} baseSize={selectArtSize} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -784,7 +801,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             letterSpacing: "0.35em",
             color: "#333",
           }}>
-            TYPE TO SEARCH &nbsp;·&nbsp; ←↑↓→ NAVIGATE &nbsp;·&nbsp; ENTER / CLICK TO SELECT
+            TYPE TO SEARCH &nbsp;/&nbsp; ARROWS NAVIGATE &nbsp;/&nbsp; ENTER OR CLICK TO SELECT
           </div>
           <div style={{
             display: "flex",
@@ -808,7 +825,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 transition: "all 0.2s ease",
               }}
             >
-              ← BACK
+              BACK
             </button>
 
             {/* Level select button inside char select */}
@@ -832,7 +849,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
               {level ? (
                 <>{level.icon} {level.name}</>
               ) : (
-                "⚔️ SELECT LEVEL"
+                "SELECT LEVEL"
               )}
             </button>
 
@@ -850,7 +867,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 transition: "all 0.2s ease",
               }}
             >
-              {publicGallery ? "PUBLIC GALLERY" : "HOME DASHBOARD"}
+              {publicGallery ? "SHOWCASE" : "HOME DASHBOARD"}
             </button>
 
             <button
@@ -895,7 +912,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                   transformStyle: "preserve-3d",
                 }}
               >
-                <CharArtStack chars={p2DisplayChars} flipped={true} baseSize={Math.min(typeof window !== "undefined" ? window.innerWidth * 0.32 : 280, 520)} />
+                <CharArtStack chars={p2DisplayChars} flipped={true} baseSize={selectArtSize} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -981,7 +998,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         />
       )}
 
-      {/* Level Select overlay — slides in over char select */}
+      {/* Level Select overlay slides in over char select. */}
       <AnimatePresence>
         {showLevelSelect && mode && (
           <motion.div

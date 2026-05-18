@@ -86,7 +86,7 @@ export async function PUT(request, { params }) {
 
     const formData = await request.formData();
     const name = normalizeText(formData.get("name")).toUpperCase();
-    const icon = normalizeText(formData.get("icon"), "⚔️");
+    const icon = normalizeText(formData.get("icon"), "SWRD");
     const description = normalizeText(formData.get("description"));
     const difficulty = normalizeDifficulty(formData.get("difficulty"), existingArena.difficulty || 1);
     const requestedClassId = normalizeText(formData.get("classId"));

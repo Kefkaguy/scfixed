@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 import { getUsersCollection } from "@/lib/mongodb";
 import { uploadFileToS3 } from "@/lib/s3";
 import { auth, isTeacherRequest } from "@/lib/auth";
@@ -88,7 +89,7 @@ export async function POST(request) {
     }
 
     const name = normalizeText(formData.get("name")).toUpperCase();
-    const icon = normalizeText(formData.get("icon"), "⚔️");
+    const icon = normalizeText(formData.get("icon"), "SWRD");
     const description = normalizeText(formData.get("description"));
     const difficulty = normalizeDifficulty(formData.get("difficulty"), 1);
 

@@ -158,7 +158,7 @@ function LevelCard({ lv, isSelected, index, onClick, onHover }) {
             color: isSelected ? lv.color : "rgba(255,255,255,0.2)",
           }}
         >
-          ▶
+          &gt;
         </motion.div>
       </div>
 
@@ -219,7 +219,7 @@ function StagePreview({ lv }) {
           boxShadow: `0 0 40px ${lv.color}22, inset 0 0 30px rgba(0,0,0,0.6)`,
         }}
       >
-        {/* Stage background — video or image, falls back to CSS gradient */}
+        {/* Stage background: video or image, falls back to CSS gradient. */}
         <LevelBackground level={lv} dimAmount={0.35} zIndex={0} />
         <DiagonalStripes color={lv.color} opacity={0.04} />
 
@@ -319,7 +319,7 @@ function StagePreview({ lv }) {
             color: "#555",
             marginBottom: 3,
           }}>
-            STAGE {lv.number} — {lv.subtitle.toUpperCase()}
+            STAGE {lv.number} - {lv.subtitle.toUpperCase()}
           </div>
           <div style={{
             fontFamily: "var(--font-name)",
@@ -427,7 +427,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
             NO PUBLIC ARENAS
           </div>
           <div style={{ marginTop: 12, color: "#8d93a8", fontSize: 13, lineHeight: 1.7 }}>
-            Add a teacher arena or enable preloaded assets from the public showcase page.
+            No public arenas yet. Add a teacher arena or approve a student arena to fill the showcase.
           </div>
           <button
             type="button"
@@ -519,7 +519,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
           onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "#555"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
         >
-          ← BACK
+          BACK
         </button>
 
         <div style={{ textAlign: "center" }}>
@@ -530,7 +530,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
             color: "#444",
             marginBottom: 3,
           }}>
-            {mode?.toUpperCase()} MODE — SELECT STAGE
+            {mode?.toUpperCase()} MODE - SELECT STAGE
           </div>
           <div style={{
             fontFamily: "var(--font-name)",
@@ -585,7 +585,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
         minHeight: 0,
         overflow: "hidden",
       }}>
-        {/* Left — stage list */}
+        {/* Left stage list */}
         <div style={{
           borderRight: "1px solid rgba(255,255,255,0.07)",
           overflowY: "auto",
@@ -606,7 +606,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
               marginBottom: 4,
             }}
           >
-            ── AVAILABLE STAGES ──
+            -- AVAILABLE STAGES --
           </motion.div>
 
           {allLevels.map((lv, i) => (
@@ -621,7 +621,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
           ))}
         </div>
 
-        {/* Right — preview panel */}
+        {/* Right preview panel */}
         <div style={{
           padding: "20px 28px 20px 20px",
           display: "flex",
@@ -640,7 +640,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
               color: "#333",
             }}
           >
-            ── STAGE PREVIEW ──
+            -- STAGE PREVIEW --
           </motion.div>
 
           <StagePreview lv={hoveredLevel} />
@@ -704,7 +704,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
             letterSpacing: "0.4em",
             color: "#2a2a2a",
           }}>
-            HOVER TO PREVIEW · CLICK TO CONFIRM
+            HOVER TO PREVIEW / CLICK TO CONFIRM
           </div>
         </div>
       </div>

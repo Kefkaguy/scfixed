@@ -14,6 +14,11 @@ const dmSans = DM_Sans({
 export const metadata = {
   title: "Digital Art Battle",
   description: "Classroom digital art competition dashboard and battle arena",
+  icons: {
+    icon: "/digital-art-battle-logo.png",
+    shortcut: "/digital-art-battle-logo.png",
+    apple: "/digital-art-battle-logo.png",
+  },
 }
 
 export default function RootLayout({ children }) {

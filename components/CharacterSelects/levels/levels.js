@@ -13,7 +13,7 @@ export const LEVELS = [
     accentColor: "#aaddff",
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #001133 0%, #070810 70%)",
     pattern: "grid",
-    icon: "⚔️",
+    icon: "S1",
     tags: ["STARTER", "FLAT TERRAIN"],
   },
   {
@@ -29,7 +29,7 @@ export const LEVELS = [
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #2a0000 0%, #070810 70%)",
     bgSrc: "/stages/2.jpg",
     pattern: "diagonal",
-    icon: "👑",
+    icon: "S2",
     tags: ["INTERMEDIATE", "ELEVATED PLATFORMS"],
   },
   {
@@ -45,7 +45,7 @@ export const LEVELS = [
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #1a0033 0%, #070810 70%)",
     bgSrc: "/stages/3.jpg",
     pattern: "dots",
-    icon: "🌌",
+    icon: "S3",
     tags: ["ADVANCED", "HAZARDS ACTIVE"],
   },
   {
@@ -61,7 +61,7 @@ export const LEVELS = [
     bgSrc: "/stages/4.jpg",
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #221200 0%, #070810 70%)",
     pattern: "grid",
-    icon: "🌸",
+    icon: "S4",
     tags: ["LEGENDARY", "ALL HAZARDS"],
   },
   {
@@ -77,7 +77,7 @@ export const LEVELS = [
     accentColor: "#ffcc44",
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #2a1000 0%, #070810 70%)",
     pattern: "diagonal",
-    icon: "☀️",
+    icon: "S5",
     tags: ["EXPERT", "MOVING STAGE"],
   },
   {
@@ -93,7 +93,7 @@ export const LEVELS = [
     bg: "radial-gradient(ellipse 80% 60% at 50% 80%, #221200 0%, #070810 70%)",
     bgSrc: "/stages/6.jpg",
     pattern: "grid",
-    icon: "💀",
+    icon: "S6",
     tags: ["LEGENDARY", "ALL HAZARDS"],
   },
 ]

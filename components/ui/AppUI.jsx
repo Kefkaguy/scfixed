@@ -3,6 +3,17 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+export const siteLogoSrc = "/digital-art-battle-logo.png";
+
+export function SiteLogoMark({ className = "h-11 w-16" }) {
+  return (
+    <span className={`grid place-items-center overflow-hidden rounded-md border border-[color:var(--gold-55)] bg-black/35 shadow-[0_0_28px_rgba(240,192,32,0.12)] ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={siteLogoSrc} alt="Digital Art Battle" className="h-full w-full object-contain p-1" />
+    </span>
+  );
+}
+
 export const tones = {
   gold: {
     text: "text-[var(--gold)]",
@@ -70,28 +81,29 @@ export function AppShell({ children, className = "" }) {
 }
 
 export function TopNav({ session, onSignOut }) {
-  const nav = [
+  const publicNav = [
     ["Home", "/"],
-    ["Teacher Assets", "/teacher-assets"],
-    ["Student Submissions", "/student-work"],
-    ["GIF Editor", "/gif-editor"],
     ["Showcase", "/showcase"],
-    ["Arena / Play", "/arena"],
+    ["Play", "/showcase/play"],
+    ["GIF Editor", "/gif-editor"],
   ];
+  const teacherNav = [
+    ...publicNav,
+  ];
+  const isTeacher = Boolean(session?.isAdmin || (session?.user?.role === "teacher" && !session?.user?.mustChangePassword));
+  const nav = isTeacher ? teacherNav : publicNav;
 
   return (
     <header className="mb-5 rounded-lg border border-[color:var(--color-surface-border-4)] bg-[rgba(5,7,16,0.78)] px-4 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/" className="group flex items-center gap-3 no-underline">
-          <span className="grid h-11 w-11 place-items-center rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] text-xl font-black text-[var(--gold)] shadow-[0_0_28px_rgba(240,192,32,0.12)] transition group-hover:scale-105">
-            DA
-          </span>
+          <SiteLogoMark className="h-11 w-16 transition group-hover:scale-105" />
           <span>
             <span className="block font-[var(--font-name)] text-2xl leading-none tracking-normal text-white sm:text-3xl">
               Digital Art Battle
             </span>
             <span className="block text-xs font-semibold tracking-[0.18em] text-[var(--color-text-muted)]">
-              classroom art arena
+              public character select
             </span>
           </span>
         </Link>
@@ -118,7 +130,7 @@ export function TopNav({ session, onSignOut }) {
               href="/login?callbackUrl=/"
               className="rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--gold)] transition hover:bg-[color:var(--gold-16)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
             >
-              Teacher login
+              Teacher Login
             </Link>
           )}
         </nav>
@@ -213,9 +225,7 @@ export function EmptyState({ title, children, action }) {
   return (
     <Panel className="grid place-items-center p-8 text-center">
       <div className="max-w-lg">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-md border border-[color:var(--gold-35)] bg-[color:var(--gold-10)] font-[var(--font-name)] text-2xl text-[var(--gold)]">
-          DA
-        </div>
+        <SiteLogoMark className="mx-auto h-14 w-20" />
         <h3 className="mt-4 font-[var(--font-name)] text-2xl tracking-normal text-white">{title}</h3>
         {children ? <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">{children}</p> : null}
         {action ? <div className="mt-5 flex justify-center">{action}</div> : null}

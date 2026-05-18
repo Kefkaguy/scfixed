@@ -214,7 +214,7 @@ function FilterPanel({ title, accent, values, onChange, onReset, side = "left", 
           boxShadow: `0 10px 24px ${accent}1a`,
         }}
       >
-        {title} {isOpen ? "▲" : "▼"}
+        {title} {isOpen ? "OPEN" : "CLOSED"}
       </button>
 
       {isOpen ? (
@@ -359,12 +359,10 @@ function isArenaBackgroundAsset(value, level) {
   );
 }
 
-function getDirectionalArtSrc(char, direction, level) {
+function getDirectionalArtSrc(char, direction, level, { rotated = false } = {}) {
   if (!char || direction === 0) return char?.artSrc || null;
-  if (char.createdByUserId || String(char.id || "").startsWith("custom_")) {
-    return char.artSrc || null;
-  }
-  const movementArtSrc = direction < 0 ? char.moveLeftArtSrc : char.moveRightArtSrc;
+  const visualDirection = rotated ? -direction : direction;
+  const movementArtSrc = visualDirection < 0 ? char.moveLeftArtSrc : char.moveRightArtSrc;
   if (!movementArtSrc || isArenaBackgroundAsset(movementArtSrc, level)) {
     return char.artSrc || null;
   }
@@ -531,8 +529,8 @@ export default function FightBanner({
   const p2LeadChar = p2CharList[0] || null;
   const p1EntranceQuote = getEntranceQuote(p1CharList);
   const p2EntranceQuote = getEntranceQuote(p2CharList);
-  const p1ArtSrc = getDirectionalArtSrc(p1LeadChar, movement.p1, level);
-  const p2ArtSrc = getDirectionalArtSrc(p2LeadChar, movement.p2, level);
+  const p1ArtSrc = getDirectionalArtSrc(p1LeadChar, movement.p1, level, { rotated: p1Rotated });
+  const p2ArtSrc = getDirectionalArtSrc(p2LeadChar, movement.p2, level, { rotated: p2Rotated });
   const p1FrontFilter = buildFilterStyle(filters.p1);
   const p2FrontFilter = buildFilterStyle(filters.p2);
   const p1BackFilter = `brightness(0.72) ${buildFilterStyle(filters.p1)}`;
@@ -958,7 +956,7 @@ export default function FightBanner({
                 }}
                 aria-label="Close screenshot popup"
               >
-                ×
+                X
               </button>
             </div>
 

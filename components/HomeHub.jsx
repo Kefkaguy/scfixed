@@ -16,6 +16,7 @@ import {
   Panel,
   SectionHeader,
   SelectControl,
+  SiteLogoMark,
   StatCard,
   TopNav,
   inputClass,
@@ -271,30 +272,27 @@ export default function HomeHub() {
         <Panel className="overflow-hidden">
           <div className="grid gap-8 p-5 sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-center">
             <div>
-              <h1 className="font-[var(--font-name)] text-5xl leading-[0.9] tracking-normal text-white sm:text-7xl">
-                Digital Art Battle
+              <SiteLogoMark className="mb-5 h-24 w-36 border-[color:var(--gold-77)] bg-black/50" />
+              <p className="text-xs font-black uppercase tracking-[0.32em] text-[var(--gold)]">Arcade classroom showcase</p>
+              <h1 className="mt-4 font-[var(--font-name)] text-5xl leading-[0.9] tracking-normal text-white sm:text-7xl">
+                Press Start
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-text-muted)]">
-                Upload assets, approve submissions, publish the showcase, and play.
+                Pick fighters. Choose a stage. Launch the scene.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Button onClick={() => setUploadOpen(true)} tone="green">Student Submissions</Button>
-                <Button href="/gif-editor" tone="neutral">GIF Editor</Button>
                 <Button href="/showcase" tone="blue">Showcase</Button>
-                <Button href="/arena" tone="gold">Arena / Play</Button>
+                
               </div>
             </div>
             <div className="grid gap-3 rounded-lg border border-[color:var(--color-surface-border-4)] bg-black/25 p-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--color-text-muted-7)]">General class</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--color-text-muted-7)]">Class code</span>
                 <span className="rounded-md border border-[color:var(--success-52)] bg-[rgba(103,224,143,0.12)] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-success)]">Public</span>
               </div>
               <div>
                 <p className="font-[var(--font-name)] text-4xl leading-none tracking-normal text-[var(--gold)]">
                   {generalClass?.joinCode || "Loading"}
-                </p>
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                  {generalClass?.name || "General Showcase"} accepts student submissions with this code.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -309,9 +307,9 @@ export default function HomeHub() {
         {status ? <Alert tone="gold">{status}</Alert> : null}
 
         <section className="grid gap-4">
-          <SectionHeader
-            label="Assets"
-            title="Student Submissions"
+            <SectionHeader
+              label="Assets"
+              title="Submit"
             action={
               <>
                 <Button href="/gif-editor" tone="neutral">GIF Editor</Button>
@@ -344,7 +342,7 @@ export default function HomeHub() {
 
                   <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[0.85fr_1.15fr]">
                     <div className="grid content-start gap-4">
-                      <h3 className="font-[var(--font-name)] text-3xl tracking-normal text-white">1. Student details</h3>
+                      <h3 className="font-[var(--font-name)] text-3xl tracking-normal text-white">Student</h3>
                       {draft.mode !== "test" ? (
                         <>
                           <div className="rounded-lg border border-[color:var(--gold-35)] bg-[color:var(--gold-06)] p-4">
@@ -371,7 +369,7 @@ export default function HomeHub() {
                     </div>
 
                     <div className="grid content-start gap-4">
-                      <h3 className="font-[var(--font-name)] text-3xl tracking-normal text-white">2. Artwork</h3>
+                      <h3 className="font-[var(--font-name)] text-3xl tracking-normal text-white">Artwork</h3>
                       {draft.assetType === "fighter" ? (
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                           <DropZone label="Icon" file={draft.iconFile} accept="image/*" onFile={(file) => updateDraft({ iconFile: file })} required />
@@ -430,17 +428,17 @@ export default function HomeHub() {
           <section className="grid gap-4">
             <SectionHeader
               label="Moderation"
-              title="Approval System"
+              title="Approvals"
               action={
                 <>
-                  <Button href="/student-work" tone="blue">Student Submissions</Button>
+                  <Button href="/student-work" tone="blue">Student Work</Button>
                   <Button onClick={() => setManagerOpen(true)} tone="gold">Teacher Assets</Button>
                 </>
               }
             />
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Student uploads" value={counts.total} tone="gold" />
+              <StatCard label="Uploads" value={counts.total} tone="gold" />
               <StatCard label="Pending" value={counts.pending} tone="gold" />
               <StatCard label="Approved" value={counts.approved} tone="green" />
               <StatCard label="Hidden" value={counts.hidden} tone="red" />
@@ -465,9 +463,7 @@ export default function HomeHub() {
             </Panel>
 
             {approvalQueue.length === 0 ? (
-              <EmptyState title="No pending uploads">
-                Pending student submissions matching this filter will appear here for approval.
-              </EmptyState>
+              <EmptyState title="No pending uploads" />
             ) : (
               <motion.div variants={listMotion.variants} initial="hidden" animate="show" className="grid gap-4">
                 {approvalQueue.map((item) => (

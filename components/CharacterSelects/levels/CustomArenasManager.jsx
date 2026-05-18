@@ -18,7 +18,7 @@ const INPUT_STYLE = {
   width: "100%",
   outline: "none",
 };
-const ICON_OPTIONS = ["⚔️", "🏟️", "🔥", "🌙", "👑", "🌌", "☠️", "🗿", "🌋", "🧊", "🕯️", "🌸"];
+const ICON_OPTIONS = ["SWRD", "STDM", "FIRE", "MOON", "CROWN", "VOID", "SKUL", "RUIN", "LAVA", "ICE", "LAMP", "BLOOM"];
 
 function isVideoPreview(value) {
   return typeof value === "string" && (value.startsWith("blob:") || value.endsWith(".webm") || value.endsWith(".mp4") || value.endsWith(".mov"));
@@ -29,7 +29,7 @@ function normalizeArena(arena = {}) {
     _id: arena._id ?? null,
     id: arena.id ?? null,
     name: arena.name ?? "",
-    icon: arena.icon ?? "⚔️",
+    icon: arena.icon ?? "SWRD",
     description: arena.description ?? "",
     difficulty: arena.difficulty ?? 1,
     bgSrc: arena.bgSrc ?? null,
@@ -250,7 +250,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
     try {
       const formData = new FormData();
       formData.append("name", activeEditing.name || "");
-      formData.append("icon", activeEditing.icon || "⚔️");
+      formData.append("icon", activeEditing.icon || "SWRD");
       formData.append("description", activeEditing.description || "");
       formData.append("difficulty", String(activeEditing.difficulty || 1));
 
@@ -425,7 +425,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
                                 <img src={arena.bgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               )
                             ) : (
-                              <span style={{ fontSize: 32 }}>{arena.icon || "⚔️"}</span>
+                              <span style={{ fontSize: 32 }}>{arena.icon || "SWRD"}</span>
                             )}
                           </div>
                           <div style={{ minWidth: 0 }}>
@@ -433,7 +433,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
                               {arena.name}
                             </div>
                             <div style={{ marginTop: 6, color: "#8d93a8", fontSize: 12, letterSpacing: "0.12em" }}>
-                              {arena.icon || "⚔️"} . DIFFICULTY {arena.difficulty}
+                              {arena.icon || "SWRD"} . DIFFICULTY {arena.difficulty}
                             </div>
                             <div style={{ marginTop: 8, color: "#586176", fontSize: 10, letterSpacing: "0.12em" }}>
                               {arena.description || "No description yet."}

@@ -108,7 +108,7 @@ export async function POST(request) {
     const entranceQuote = normalizeText(formData.get("entranceQuote"));
     const color = normalizeColor(formData.get("color"), "#e8001a");
     const accent = normalizeColor(formData.get("accent"), "#ff6644");
-    const element = normalizeText(formData.get("element"), "\uD83D\uDD25");
+    const element = normalizeText(formData.get("element"), "FIRE");
     const bgTint = normalizeColor(formData.get("bgTint"), "#2a0000");
 
     if (!name) {

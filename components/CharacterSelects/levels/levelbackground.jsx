@@ -8,12 +8,12 @@ import { motion, AnimatePresence } from "framer-motion";
  * Falls back to the level's CSS gradient `bg` if the file fails or isn't set.
  *
  * Props:
- *   level        — level object from LEVELS (needs .bgSrc, .bg, .color, .id)
- *   opacity      — overall opacity of the bg layer (default 1)
- *   overlay      — extra CSS string added on top (e.g. darken overlay)
- *   dimAmount    — 0–1, how much to darken the media (default 0.45)
- *   style        — extra inline styles for the wrapper div
- *   zIndex       — default 0
+ *   level        - level object from LEVELS (needs .bgSrc, .bg, .color, .id)
+ *   opacity      - overall opacity of the bg layer (default 1)
+ *   overlay      - extra CSS string added on top (e.g. darken overlay)
+ *   dimAmount    - 0-1, how much to darken the media (default 0.45)
+ *   style        - extra inline styles for the wrapper div
+ *   zIndex       - default 0
  */
 function getCaptureSafeSrc(src) {
   if (!src || src.startsWith("/") || src.startsWith("data:") || src.startsWith("blob:")) {
@@ -69,7 +69,7 @@ export default function LevelBackground({
           ...style,
         }}
       >
-        {/* ── Media layer (video or image) ── */}
+        {/* Media layer: video or image */}
         {showMedia ? (
           isVideo ? (
             <video
@@ -123,7 +123,7 @@ export default function LevelBackground({
           />
         )}
 
-        {/* ── Dim overlay (always applied over media) ── */}
+        {/* Dim overlay, always applied over media */}
         <div
           style={{
             position: "absolute",
@@ -133,7 +133,7 @@ export default function LevelBackground({
           }}
         />
 
-        {/* ── Color tint from the level's theme color ── */}
+        {/* Color tint from the level's theme color */}
         <div
           style={{
             position: "absolute",
@@ -143,7 +143,7 @@ export default function LevelBackground({
           }}
         />
 
-        {/* ── Optional extra overlay (e.g. gradient mask) ── */}
+        {/* Optional extra overlay, e.g. gradient mask */}
         {overlay && (
           <div
             style={{

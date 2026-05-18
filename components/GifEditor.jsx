@@ -8,6 +8,7 @@ import { Alert, AppShell, Button, Field, Panel, SectionHeader, TopNav, inputClas
 const DEFAULT_SIZE = 512;
 const GIF_FPS = 10;
 const GIF_EDITOR_CONTEXT_PREFIX = "digital-art-battle:gif-editor:";
+const GIF_TRANSPARENT_ALPHA = 127;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -77,26 +78,81 @@ function colorDistance(left, right) {
   return Math.hypot(left.r - right.r, left.g - right.g, left.b - right.b);
 }
 
+function prepareGifImageData(imageData) {
+  const prepared = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+  const data = prepared.data;
+  let hasTransparency = false;
+  let opaquePixelCount = 0;
+
+  for (let offset = 0; offset < data.length; offset += 4) {
+    if (data[offset + 3] <= GIF_TRANSPARENT_ALPHA) {
+      data[offset] = 0;
+      data[offset + 1] = 0;
+      data[offset + 2] = 0;
+      data[offset + 3] = 0;
+      hasTransparency = true;
+    } else {
+      data[offset + 3] = 255;
+      opaquePixelCount += 1;
+    }
+  }
+
+  return { imageData: prepared, hasTransparency, opaquePixelCount };
+}
+
+function opaquePixels(imageData, opaquePixelCount) {
+  const source = imageData.data;
+  const output = new Uint8ClampedArray(opaquePixelCount * 4);
+  let targetOffset = 0;
+
+  for (let offset = 0; offset < source.length; offset += 4) {
+    if (source[offset + 3] > GIF_TRANSPARENT_ALPHA) {
+      output[targetOffset] = source[offset];
+      output[targetOffset + 1] = source[offset + 1];
+      output[targetOffset + 2] = source[offset + 2];
+      output[targetOffset + 3] = 255;
+      targetOffset += 4;
+    }
+  }
+
+  return output;
+}
+
 function encodeGif(frames, width, height, fallbackDelayMs) {
   const gif = GIFEncoder();
   frames.forEach((frame) => {
-    const imageData = frame.imageData || frame;
-    const palette = quantize(imageData.data, 256, {
-      format: "rgba4444",
-      oneBitAlpha: 127,
-      clearAlpha: true,
-      clearAlphaThreshold: 127,
-      clearAlphaColor: 0x00,
-    });
-    const transparentIndex = Math.max(0, palette.findIndex((color) => color[3] < 128));
-    const index = applyPalette(imageData.data, palette, "rgba4444");
-    gif.writeFrame(index, width, height, {
+    const { imageData, hasTransparency, opaquePixelCount } = prepareGifImageData(frame.imageData || frame);
+    let palette;
+    let index;
+    let transparentIndex = -1;
+
+    if (hasTransparency) {
+      transparentIndex = 0;
+      if (opaquePixelCount > 0) {
+        const visiblePalette = quantize(opaquePixels(imageData, opaquePixelCount), 255, { format: "rgb565" });
+        const visibleIndex = applyPalette(imageData.data, visiblePalette, "rgb565");
+        palette = [[0, 0, 0], ...visiblePalette];
+        index = new Uint8Array(visibleIndex.length);
+
+        for (let pixel = 0; pixel < visibleIndex.length; pixel += 1) {
+          index[pixel] = imageData.data[pixel * 4 + 3] <= GIF_TRANSPARENT_ALPHA ? transparentIndex : visibleIndex[pixel] + 1;
+        }
+      } else {
+        palette = [[0, 0, 0], [255, 255, 255]];
+        index = new Uint8Array(imageData.width * imageData.height);
+      }
+    } else {
+      palette = quantize(imageData.data, 256, { format: "rgb565" });
+      index = applyPalette(imageData.data, palette, "rgb565");
+    }
+
+    gif.writeFrame(index, imageData.width || width, imageData.height || height, {
       palette,
       delay: frame.delayMs || fallbackDelayMs,
-      transparent: true,
+      transparent: transparentIndex >= 0,
       transparentIndex,
       repeat: 0,
-      dispose: 2,
+      dispose: transparentIndex >= 0 ? 2 : -1,
     });
   });
   gif.finish();
@@ -125,7 +181,7 @@ export default function GifEditor() {
   const dragRef = useRef(null);
   const cropRef = useRef({ x: 64, y: 64, width: 384, height: 384 });
   const gifFramesRef = useRef([]);
-  const animationStartRef = useRef(Date.now());
+  const animationStartRef = useRef(0);
   const [file, setFile] = useState(null);
   const [editContext, setEditContext] = useState(null);
   const [sourceUrl, setSourceUrl] = useState("");
@@ -268,39 +324,12 @@ export default function GifEditor() {
     cropRef.current = crop;
   }, [crop]);
 
-  useEffect(() => {
-    let raf = 0;
-    function draw() {
-      const canvas = canvasRef.current;
-      const media = mediaRef.current;
-      if (!canvas || !media) {
-        raf = requestAnimationFrame(draw);
-        return;
-      }
-
-      const ctx = canvas.getContext("2d");
-      const width = Number(settings.width) || DEFAULT_SIZE;
-      const height = Number(settings.height) || DEFAULT_SIZE;
-      if (canvas.width !== width) canvas.width = width;
-      if (canvas.height !== height) canvas.height = height;
-      ctx.clearRect(0, 0, width, height);
-
-      const source = sourceKind === "gif" && gifFramesRef.current.length ? currentGifFrame()?.image : media;
-      if (source) {
-        renderSource(ctx, source, width, height, true);
-      }
-
-      raf = requestAnimationFrame(draw);
-    }
-    draw();
-    return () => cancelAnimationFrame(raf);
-  }, [backgroundRemoval, settings, sourceKind, sourceUrl, gifFrameCount, tool]);
-
-  function currentGifFrame() {
+  function currentGifFrame(now) {
     const frames = gifFramesRef.current;
     if (!frames.length) return null;
+    if (!animationStartRef.current) animationStartRef.current = now;
     const total = frames.reduce((sum, frame) => sum + frame.duration, 0) || 100;
-    let elapsed = (Date.now() - animationStartRef.current) % total;
+    let elapsed = (now - animationStartRef.current) % total;
     return frames.find((frame) => {
       elapsed -= frame.duration;
       return elapsed <= 0;
@@ -374,6 +403,47 @@ export default function GifEditor() {
       y: clamp(nextCrop.y, 0, height - nextHeight),
       width: nextWidth,
       height: nextHeight,
+    };
+  }
+
+  useEffect(() => {
+    let raf = 0;
+    function draw() {
+      const canvas = canvasRef.current;
+      const media = mediaRef.current;
+      if (!canvas || !media) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      const width = Number(settings.width) || DEFAULT_SIZE;
+      const height = Number(settings.height) || DEFAULT_SIZE;
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+
+      const source = sourceKind === "gif" && gifFramesRef.current.length ? currentGifFrame(Date.now())?.image : media;
+      if (source) {
+        renderSource(ctx, source, width, height, true);
+      }
+
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [backgroundRemoval, settings, sourceKind, sourceUrl, gifFrameCount, tool]);
+
+  function exportCropBox() {
+    const canvas = canvasRef.current;
+    const activeCrop = normalizeCrop(cropRef.current, canvas.width, canvas.height);
+    const x = Math.round(activeCrop.x);
+    const y = Math.round(activeCrop.y);
+    return {
+      x,
+      y,
+      width: Math.max(1, Math.min(canvas.width - x, Math.round(activeCrop.width))),
+      height: Math.max(1, Math.min(canvas.height - y, Math.round(activeCrop.height))),
     };
   }
 
@@ -467,11 +537,10 @@ export default function GifEditor() {
   }
 
   function getExportImageDataFromCanvas(sourceCanvas) {
-    const canvas = canvasRef.current;
-    const activeCrop = normalizeCrop(cropRef.current, canvas.width, canvas.height);
+    const activeCrop = exportCropBox();
     const outputCanvas = document.createElement("canvas");
-    outputCanvas.width = Number(settings.width) || DEFAULT_SIZE;
-    outputCanvas.height = Number(settings.height) || DEFAULT_SIZE;
+    outputCanvas.width = activeCrop.width;
+    outputCanvas.height = activeCrop.height;
     const outputCtx = outputCanvas.getContext("2d", { willReadFrequently: true });
     outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
     outputCtx.drawImage(
@@ -538,13 +607,16 @@ export default function GifEditor() {
         frames.push({ imageData: renderExportImageData(media || canvas), delayMs: fallbackDelayMs });
       }
 
-      const blob = encodeGif(frames, Number(settings.width) || DEFAULT_SIZE, Number(settings.height) || DEFAULT_SIZE, fallbackDelayMs);
+      const exportSize = frames[0]?.imageData
+        ? { width: frames[0].imageData.width, height: frames[0].imageData.height }
+        : exportCropBox();
+      const blob = encodeGif(frames, exportSize.width, exportSize.height, fallbackDelayMs);
       if (outputUrl) URL.revokeObjectURL(outputUrl);
       setOutputBlob(blob);
       setOutputKind("gif");
       setOutputUrl(URL.createObjectURL(blob));
       setOutputName(`${file.name.replace(/\.[^.]+$/, "") || "edited"}-edited.gif`);
-      setStatus("GIF exported with transparent cut areas.");
+      setStatus(`GIF exported at ${exportSize.width}x${exportSize.height}.`);
     } catch (exportError) {
       setError(exportError.message || "Could not export GIF.");
     } finally {
@@ -624,6 +696,9 @@ export default function GifEditor() {
     }
   }
 
+  const currentExportCrop = normalizeCrop(crop, Number(settings.width) || DEFAULT_SIZE, Number(settings.height) || DEFAULT_SIZE);
+  const currentExportSize = `${Math.round(currentExportCrop.width)}x${Math.round(currentExportCrop.height)}`;
+
   return (
     <AppShell>
       <TopNav />
@@ -653,15 +728,6 @@ export default function GifEditor() {
                   className={inputClass}
                 />
               </Field>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Output width">
-                  <input type="number" min="128" max="1600" value={settings.width} onChange={(event) => updateSettings({ width: clamp(Number(event.target.value) || DEFAULT_SIZE, 128, 1600) })} className={inputClass} />
-                </Field>
-                <Field label="Output height">
-                  <input type="number" min="128" max="1600" value={settings.height} onChange={(event) => updateSettings({ height: clamp(Number(event.target.value) || DEFAULT_SIZE, 128, 1600) })} className={inputClass} />
-                </Field>
-              </div>
 
               <Field label={`Make bigger ${Number(settings.zoom).toFixed(2)}x`}>
                 <input type="range" min="0.5" max="4" step="0.05" value={settings.zoom} onChange={(event) => updateSettings({ zoom: Number(event.target.value) })} className="h-12 w-full accent-[var(--gold)]" />
@@ -693,6 +759,9 @@ export default function GifEditor() {
 
               <div className="flex flex-wrap gap-2">
                 <Button tone="gold" onClick={exportGif} disabled={!file || isRecording}>{isRecording ? "Exporting" : "Export GIF"}</Button>
+                <span className="inline-flex min-h-10 items-center rounded-md border border-[color:var(--color-surface-border-5)] bg-[color:var(--color-surface-soft-3)] px-3 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                  Export {currentExportSize}
+                </span>
               </div>
 
               {outputUrl ? (

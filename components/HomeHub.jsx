@@ -272,7 +272,6 @@ export default function HomeHub() {
         <Panel className="overflow-hidden">
           <div className="grid gap-8 p-5 sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-center">
             <div>
-              <SiteLogoMark className="mb-5 h-24 w-36 border-[color:var(--gold-77)] bg-black/50" />
               <p className="text-xs font-black uppercase tracking-[0.32em] text-[var(--gold)]">Arcade classroom showcase</p>
               <h1 className="mt-4 font-[var(--font-name)] text-5xl leading-[0.9] tracking-normal text-white sm:text-7xl">
                 Press Start

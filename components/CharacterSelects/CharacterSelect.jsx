@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import ModeSelect from "./ModeSelect";
 import LevelSelect from "./levels/LevelSelect";
@@ -69,15 +70,19 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     async function loadClassState() {
       try {
         if (publicGallery) {
-          const response = await fetch("/api/public-gallery", { cache: "no-store" });
-          const payload = await response.json();
-          if (!response.ok) {
-            throw new Error(payload.error || "Failed to load public gallery.");
+          const [galleryResponse, sessionResponse] = await Promise.all([
+            fetch("/api/public-gallery", { cache: "no-store" }),
+            fetch("/api/session", { cache: "no-store" }),
+          ]);
+          const galleryPayload = await galleryResponse.json();
+          const sessionPayload = await sessionResponse.json();
+          if (!galleryResponse.ok) {
+            throw new Error(galleryPayload.error || "Failed to load public gallery.");
           }
 
           if (!cancelled) {
-            setClassSession(null);
-            setCustomChars(Array.isArray(payload.fighters) ? payload.fighters : []);
+            setClassSession(sessionResponse.ok ? sessionPayload : null);
+            setCustomChars(Array.isArray(galleryPayload.fighters) ? galleryPayload.fighters : []);
           }
           return;
         }
@@ -292,7 +297,9 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   }
 
   // Show ModeSelect
-  if (!mode && !showLevelSelect) return <ModeSelect onSelect={handleModeSelect} />;
+  if (!mode && !showLevelSelect) {
+    return <ModeSelect onSelect={handleModeSelect} session={classSession} onSignOut={() => signOut({ callbackUrl: "/" })} />;
+  }
 
   // Show LevelSelect while mode is still unknown. User picks level first, then mode.
   if (showLevelSelect && !mode) {
@@ -317,9 +324,13 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   if (!mode && level && !showLevelSelect) {
     return (
       <div style={{ position: "relative" }}>
-        <ModeSelect onSelect={(m) => {
-          if (m !== "level-select") setMode(m);
-        }} />
+        <ModeSelect
+          session={classSession}
+          onSignOut={() => signOut({ callbackUrl: "/" })}
+          onSelect={(m) => {
+            if (m !== "level-select") setMode(m);
+          }}
+        />
         {/* Level reminder badge */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -405,23 +416,22 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         background: CHARACTER_SELECT_BACKGROUND,
       }}
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={bgChar.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            position: "absolute", inset: 0, zIndex: 0,
-            background: `
-              radial-gradient(ellipse 55% 55% at 25% 50%, ${p1DisplayChar ? p1DisplayChar.color : bgChar.color}22, transparent 65%),
-              radial-gradient(ellipse 55% 55% at 75% 50%, ${p2DisplayChar ? p2DisplayChar.color : bgChar.color}22, transparent 65%),
-              radial-gradient(ellipse 80% 60% at 50% 100%, ${bgChar.color}18, transparent 60%)
-            `,
-          }}
-        />
-      </AnimatePresence>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/digital-art-battle-logo.png"
+        alt=""
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          opacity: 0.14,
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      />
 
       {/* Character color ambient glow on top of level bg */}
       {level && (

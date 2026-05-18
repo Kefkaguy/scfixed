@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -8,8 +7,7 @@ export const siteLogoSrc = "/digital-art-battle-logo.png";
 
 export function SiteLogoMark({ className = "h-11 w-16" }) {
   return (
-    <span className={`grid place-items-center overflow-hidden rounded-md border border-[color:var(--gold-55)] bg-black/35 shadow-[0_0_28px_rgba(240,192,32,0.12)] ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+    <span className={`grid place-items-center overflow-hidden rounded-md bg-black/35 shadow-[0_0_28px_rgba(240,192,32,0.12)] ${className}`}>
       <img src={siteLogoSrc} alt="Digital Art Battle" className="h-full w-full object-contain p-1" />
     </span>
   );
@@ -95,12 +93,10 @@ export function TopNav({ session, onSignOut }) {
   const nav = isTeacher ? teacherNav : publicNav;
 
   return (
-    <header className="mb-5 rounded-lg border border-[color:var(--color-surface-border-4)] bg-[rgba(5,7,16,0.78)] px-4 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
+    <header className="mb-5 rounded-lg bg-[rgba(5,7,16,0.78)] px-4 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/" className="group flex items-center gap-3 no-underline">
-          <span className="grid h-11 w-11 place-items-center rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] text-xl font-black text-[var(--gold)] shadow-[0_0_28px_rgba(240,192,32,0.12)] transition group-hover:scale-105">
-            DA
-          </span>
+          <SiteLogoMark className="h-11 w-16 transition group-hover:scale-105" />
           <span>
             <span className="block font-[var(--font-name)] text-2xl leading-none tracking-normal text-white sm:text-3xl">
               Digital Art Battle
@@ -228,9 +224,7 @@ export function EmptyState({ title, children, action }) {
   return (
     <Panel className="grid place-items-center p-8 text-center">
       <div className="max-w-lg">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-md border border-[color:var(--gold-35)] bg-[color:var(--gold-10)] font-[var(--font-name)] text-2xl text-[var(--gold)]">
-          DA
-        </div>
+        <SiteLogoMark className="mx-auto h-14 w-20" />
         <h3 className="mt-4 font-[var(--font-name)] text-2xl tracking-normal text-white">{title}</h3>
         {children ? <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">{children}</p> : null}
         {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
@@ -245,7 +239,7 @@ export function isVideo(value) {
   return lower.startsWith("blob:video") || lower.endsWith(".webm") || lower.endsWith(".mp4") || lower.endsWith(".mov");
 }
 
-export function MediaPreview({ src, fallback = "DA", fit = "cover", className = "", alt = "" }) {
+export function MediaPreview({ src, fallback = "logo", fit = "cover", className = "", alt = "" }) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
   return (
     <div className={`grid place-items-center overflow-hidden rounded-md border border-[color:var(--color-surface-border-4)] bg-black/40 ${className}`}>
@@ -256,6 +250,9 @@ export function MediaPreview({ src, fallback = "DA", fit = "cover", className = 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={src} alt={alt} className={`h-full w-full ${fitClass}`} />
         )
+      ) : fallback === "logo" ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={siteLogoSrc} alt="Digital Art Battle" className="h-full w-full object-contain p-3" />
       ) : (
         <span className="font-[var(--font-name)] text-4xl text-[var(--gold)]">{fallback}</span>
       )}

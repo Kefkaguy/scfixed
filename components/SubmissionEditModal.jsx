@@ -7,7 +7,7 @@ function previewUrl(file) {
   return file ? URL.createObjectURL(file) : "";
 }
 
-function DropZone({ label, src, file, accept, onFile, onClear, fallback = "DA", fit = "cover" }) {
+function DropZone({ label, src, file, accept, onFile, onClear, fallback = "logo", fit = "cover" }) {
   const preview = file ? previewUrl(file) : src;
   return (
     <div className="grid gap-2">

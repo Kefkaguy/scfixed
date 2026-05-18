@@ -1,7 +1,13 @@
 
 // ─── Pick Slots (bottom strip) ────────────────────────────────────────────────
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { useState } from "react";
+
 export default function PickSlot({ pick, label, color, pending, slotSize = 58 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const iconSrc = typeof pick?.character?.iconSrc === "string" && pick.character.iconSrc.trim() ? pick.character.iconSrc.trim() : null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
       <motion.div
@@ -22,7 +28,25 @@ export default function PickSlot({ pick, label, color, pending, slotSize = 58 })
         transition={{ duration: 1.2, repeat: Infinity }}
       >
         {pick ? (
-          <span>{pick.character.element}</span>
+          !imgFailed && iconSrc ? (
+            <Image
+              src={iconSrc}
+              alt={pick.character.name}
+              width={160}
+              height={160}
+              unoptimized
+              onError={() => setImgFailed(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "top center",
+                display: "block",
+              }}
+            />
+          ) : (
+            <span>{pick.character.element}</span>
+          )
         ) : pending ? (
           <motion.div
             animate={{ opacity: [0.3, 1, 0.3] }}

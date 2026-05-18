@@ -3,25 +3,20 @@
 import { motion } from "framer-motion";
 import { TopNav } from "@/components/ui/AppUI";
 
-export default function ModeSelect({ onSelect }) {
+export default function ModeSelect({ onSelect, session, onSignOut }) {
   return (
     <main className="relative grid min-h-screen overflow-hidden bg-[#212121] text-white">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 55% 55% at 25% 50%, rgba(232,0,26,0.18), transparent 65%),
-            radial-gradient(ellipse 55% 55% at 75% 50%, rgba(0,119,255,0.18), transparent 65%),
-            radial-gradient(ellipse 80% 60% at 50% 100%, rgba(240,192,32,0.1), transparent 60%)
-          `,
-        }}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/digital-art-battle-logo.png"
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain opacity-20"
       />
       <div aria-hidden="true" className="absolute inset-0 grid-lines opacity-80" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.28))]" />
 
       <header className="absolute left-0 right-0 top-0 z-20 px-4 py-4 sm:px-6 lg:px-8">
-        <TopNav />
+        <TopNav session={session} onSignOut={onSignOut} />
       </header>
 
       <section className="relative z-10 grid min-h-screen place-items-center px-4 py-24 text-center">

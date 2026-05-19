@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPresignedS3Upload } from "@/lib/s3";
 
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 const ALLOWED_FOLDERS = new Set(["character-icons", "character-art", "arena-backgrounds"]);
 
 function normalizeText(value, fallback = "") {
@@ -21,7 +21,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Choose a valid upload folder." }, { status: 400 });
     }
     if (!size || size > MAX_UPLOAD_BYTES) {
-      return NextResponse.json({ error: "Files must be 15 MB or smaller." }, { status: 413 });
+      return NextResponse.json({ error: "Files must be 20 MB or smaller." }, { status: 413 });
     }
     if (!contentType.startsWith("image/") && !contentType.startsWith("video/")) {
       return NextResponse.json({ error: "Only image and video uploads are supported." }, { status: 400 });

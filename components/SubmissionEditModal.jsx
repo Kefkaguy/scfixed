@@ -2,10 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { Alert, Button, Field, MediaPreview, Panel, inputClass } from "@/components/ui/AppUI";
+import { uploadFileDirectToS3 } from "@/lib/direct-upload";
 
 function previewUrl(file) {
   return file ? URL.createObjectURL(file) : "";
 }
+
+const editUploadFields = {
+  fighter: [
+    ["iconFile", "character-icons", "icon"],
+    ["artFile", "character-art", "idle"],
+    ["moveLeftArtFile", "character-art", "left"],
+    ["moveRightArtFile", "character-art", "right"],
+  ],
+  arena: [["bgFile", "arena-backgrounds", "arena"]],
+};
 
 function DropZone({ label, src, file, accept, onFile, onClear, fallback = "logo", fit = "cover" }) {
   const preview = file ? previewUrl(file) : src;
@@ -66,11 +77,17 @@ export default function SubmissionEditModal({ item, onClose, onSaved }) {
       formData.set("action", "edit");
       formData.set("assetType", item?.assetType || "fighter");
       Object.entries(draft).forEach(([key, value]) => formData.set(key, String(value ?? "")));
-      if (files.iconFile) formData.set("iconFile", files.iconFile);
-      if (files.artFile) formData.set("artFile", files.artFile);
-      if (files.moveLeftArtFile) formData.set("moveLeftArtFile", files.moveLeftArtFile);
-      if (files.moveRightArtFile) formData.set("moveRightArtFile", files.moveRightArtFile);
-      if (files.bgFile) formData.set("bgFile", files.bgFile);
+      for (const [field, folder, suffix] of editUploadFields[item?.assetType || "fighter"] || []) {
+        const file = files[field];
+        if (!(file instanceof File)) continue;
+        const upload = await uploadFileDirectToS3({
+          file,
+          folder,
+          namePrefix: `${draft.name || "upload"}-${suffix}`,
+        });
+        formData.set(field.replace("File", "Src"), upload.url);
+        formData.set(field.replace("File", "Key"), upload.key);
+      }
       if (clearMoves.left) formData.set("clearMoveLeftArt", "1");
       if (clearMoves.right) formData.set("clearMoveRightArt", "1");
 

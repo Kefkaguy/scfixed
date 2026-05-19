@@ -26,7 +26,8 @@ async function uploadOptionalFile(formData, field, folder, namePrefix) {
     return uploadFileToS3({ file, folder, namePrefix });
   }
   const existingSrc = normalizeText(formData.get(field.replace("File", "Src"))) || null;
-  return existingSrc ? { url: existingSrc, key: null } : null;
+  const existingKey = normalizeText(formData.get(field.replace("File", "Key"))) || null;
+  return existingSrc ? { url: existingSrc, key: existingKey } : null;
 }
 
 export async function GET(request) {

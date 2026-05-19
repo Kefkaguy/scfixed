@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomCharactersManager from "@/components/CharacterSelects/CustomCharactersManager";
 import SubmissionEditModal from "@/components/SubmissionEditModal";
+import { uploadFileDirectToS3 } from "@/lib/direct-upload";
 import {
   Alert,
   AppShell,
@@ -51,6 +52,16 @@ const emptyDraft = {
 function previewUrl(file) {
   return file ? URL.createObjectURL(file) : "";
 }
+
+const submissionUploadFields = {
+  fighter: [
+    ["iconFile", "character-icons", "icon"],
+    ["artFile", "character-art", "idle"],
+    ["moveLeftArtFile", "character-art", "left"],
+    ["moveRightArtFile", "character-art", "right"],
+  ],
+  arena: [["bgFile", "arena-backgrounds", "arena"]],
+};
 
 function DropZone({ label, value, file, accept, onFile, required = false, className = "aspect-[4/3]" }) {
   const src = file ? previewUrl(file) : value;
@@ -212,9 +223,19 @@ export default function HomeHub() {
       if (!canSubmit) throw new Error("Complete all required fields before submitting.");
       const formData = new FormData();
       Object.entries(draft).forEach(([key, value]) => {
-        if (value instanceof File) formData.append(key, value);
-        else if (value !== null && value !== undefined) formData.append(key, String(value));
+        if (!(value instanceof File) && value !== null && value !== undefined) formData.append(key, String(value));
       });
+      for (const [field, folder, suffix] of submissionUploadFields[draft.assetType] || []) {
+        const file = draft[field];
+        if (!(file instanceof File)) continue;
+        const upload = await uploadFileDirectToS3({
+          file,
+          folder,
+          namePrefix: `${draft.name || "upload"}-${suffix}`,
+        });
+        formData.set(field.replace("File", "Src"), upload.url);
+        formData.set(field.replace("File", "Key"), upload.key);
+      }
       formData.set("joinCode", generalClass?.joinCode || "");
       const response = await fetch("/api/general-submissions", { method: "POST", body: formData });
       const payload = await response.json();

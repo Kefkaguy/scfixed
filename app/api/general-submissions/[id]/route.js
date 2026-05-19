@@ -20,6 +20,18 @@ function normalizeColor(value, fallback) {
 async function replaceUpload({ formData, field, folder, namePrefix, currentSrc, currentKey }) {
   const file = formData?.get(field);
   if (!(file instanceof File) || file.size <= 0) {
+    const directSrc = normalizeText(formData?.get(field.replace("File", "Src")));
+    const directKey = normalizeText(formData?.get(field.replace("File", "Key")));
+    if (directSrc) {
+      const existingKey = currentKey || getS3KeyFromUrl(currentSrc);
+      if (existingKey && directKey && existingKey !== directKey) {
+        await deleteFileFromS3(existingKey);
+      }
+      return {
+        src: directSrc,
+        key: directKey || getS3KeyFromUrl(directSrc) || null,
+      };
+    }
     return {
       src: currentSrc || null,
       key: currentKey || getS3KeyFromUrl(currentSrc) || null,

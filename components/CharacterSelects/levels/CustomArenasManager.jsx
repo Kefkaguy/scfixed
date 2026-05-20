@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { uploadFileDirectToS3 } from "@/lib/direct-upload";
 
 const GOLD = "#f0c020";
 const RED = "#e8001a";
@@ -33,6 +34,7 @@ function normalizeArena(arena = {}) {
     description: arena.description ?? "",
     difficulty: arena.difficulty ?? 1,
     bgSrc: arena.bgSrc ?? null,
+    bgKey: arena.bgKey ?? null,
     bgFile: null,
   };
 }
@@ -255,9 +257,18 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
       formData.append("difficulty", String(activeEditing.difficulty || 1));
 
       if (activeEditing.bgFile instanceof File) {
-        formData.append("bgFile", activeEditing.bgFile);
+        const upload = await uploadFileDirectToS3({
+          file: activeEditing.bgFile,
+          folder: "arena-backgrounds",
+          namePrefix: activeEditing.name || "arena",
+        });
+        formData.append("bgSrc", upload.url);
+        formData.append("bgKey", upload.key);
       } else if (activeEditing.bgSrc && !activeEditing.bgSrc.startsWith("blob:")) {
         formData.append("bgSrc", activeEditing.bgSrc);
+        if (activeEditing.bgKey) {
+          formData.append("bgKey", activeEditing.bgKey);
+        }
       }
 
       const identifier = activeEditing._id || activeEditing.id;

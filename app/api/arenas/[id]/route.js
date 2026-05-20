@@ -98,6 +98,7 @@ export async function PUT(request, { params }) {
 
     const bgFile = formData.get("bgFile");
     const existingBgSrc = normalizeText(formData.get("bgSrc")) || null;
+    const existingBgKey = normalizeText(formData.get("bgKey")) || null;
     let bgSrc = existingBgSrc;
     let bgKey = existingArena.bgKey || getS3KeyFromUrl(existingArena.bgSrc);
     const targetClass = await resolveEditableClass({
@@ -123,6 +124,12 @@ export async function PUT(request, { params }) {
 
       bgSrc = bgUpload.url;
       bgKey = bgUpload.key;
+    } else if (existingBgSrc) {
+      if (bgKey && existingBgKey && bgKey !== existingBgKey) {
+        await deleteFileFromS3(bgKey);
+      }
+      bgSrc = existingBgSrc;
+      bgKey = existingBgKey || getS3KeyFromUrl(existingBgSrc);
     }
 
     const nextArena = {

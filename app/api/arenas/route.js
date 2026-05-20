@@ -99,8 +99,9 @@ export async function POST(request) {
 
     const bgFile = formData.get("bgFile");
     const existingBgSrc = normalizeText(formData.get("bgSrc")) || null;
+    const existingBgKey = normalizeText(formData.get("bgKey")) || null;
 
-    let bgUpload = existingBgSrc ? { url: existingBgSrc } : null;
+    let bgUpload = existingBgSrc ? { url: existingBgSrc, key: existingBgKey } : null;
 
     if (bgFile instanceof File && bgFile.size > 0) {
       bgUpload = await uploadFileToS3({

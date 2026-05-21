@@ -14,7 +14,6 @@ import CharCard from "./CharCard";
 import PickSlot from "./PickSlot";
 import NamePlate from "./NamePlate";
 import FightBanner from "./FightBanner";
-import { LEVELS } from "./levels/levels";
 
 const DRAFT_ORDER = { "1v1": [1, 2] };
 const P1_COLOR = "#e8001a";
@@ -39,8 +38,11 @@ function getCharacterSearchFields(char) {
   };
 }
 
-function getRandomLevel() {
-  return LEVELS[Math.floor(Math.random() * LEVELS.length)] || LEVELS[0] || null;
+function getRandomLevel(levels) {
+  if (!Array.isArray(levels) || levels.length === 0) {
+    return null;
+  }
+  return levels[Math.floor(Math.random() * levels.length)] || null;
 }
 
 export default function CharacterSelect({ publicGallery = false, allowPreloadedAssets = false, initialMode = null }) {
@@ -58,6 +60,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   const [done, setDone] = useState(false);
   const [fightStarted, setFightStarted] = useState(false);
   const [customChars, setCustomChars] = useState([]);
+  const [uploadedLevels, setUploadedLevels] = useState([]);
   const [classSession, setClassSession] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -88,16 +91,19 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
           if (!cancelled) {
             setClassSession(sessionResponse.ok ? sessionPayload : null);
             setCustomChars(Array.isArray(galleryPayload.fighters) ? galleryPayload.fighters : []);
+            setUploadedLevels(Array.isArray(galleryPayload.arenas) ? galleryPayload.arenas : []);
           }
           return;
         }
 
-        const [sessionResponse, charactersResponse] = await Promise.all([
+        const [sessionResponse, charactersResponse, arenasResponse] = await Promise.all([
           fetch("/api/session", { cache: "no-store" }),
           fetch("/api/characters", { cache: "no-store" }),
+          fetch("/api/arenas", { cache: "no-store" }),
         ]);
         const sessionPayload = await sessionResponse.json();
         const charactersPayload = await charactersResponse.json();
+        const arenasPayload = await arenasResponse.json();
 
         if (!sessionResponse.ok) {
           throw new Error(sessionPayload.error || "Failed to load class session.");
@@ -106,15 +112,20 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         if (!charactersResponse.ok) {
           throw new Error(charactersPayload.error || "Failed to load class GIFs.");
         }
+        if (!arenasResponse.ok) {
+          throw new Error(arenasPayload.error || "Failed to load class arenas.");
+        }
 
         if (!cancelled) {
           setClassSession(sessionPayload);
           setCustomChars(Array.isArray(charactersPayload.characters) ? charactersPayload.characters : []);
+          setUploadedLevels(Array.isArray(arenasPayload.arenas) ? arenasPayload.arenas : []);
         }
       } catch (error) {
         console.error("[CharacterSelect] Failed to load class state", error);
         if (!cancelled) {
           setCustomChars([]);
+          setUploadedLevels([]);
           setClassSession(null);
         }
       }
@@ -205,8 +216,8 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     : Math.min((viewportWidth || 875) * 0.32, 520);
   const pickSlotSize = isNarrowViewport ? 34 : isCompactViewport ? 42 : 52;
   const activeFightLevel = useMemo(
-    () => fightStarted ? (fightLevel || level || getRandomLevel()) : null,
-    [fightLevel, fightStarted, level]
+    () => fightStarted ? (fightLevel || level || getRandomLevel(uploadedLevels)) : null,
+    [fightLevel, fightStarted, level, uploadedLevels]
   );
 
   const confirmPick = useCallback((char) => {
@@ -295,7 +306,11 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
   }
 
   function startFight() {
-    const nextFightLevel = level || getRandomLevel();
+    const nextFightLevel = level || getRandomLevel(uploadedLevels);
+    if (!nextFightLevel) {
+      setShowLevelSelect(true);
+      return;
+    }
     setFightLevel(nextFightLevel);
     setFightStarted(true);
   }

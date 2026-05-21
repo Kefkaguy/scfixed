@@ -364,7 +364,7 @@ export default function LevelSelect({ onSelect, onBack, mode, publicGallery = fa
   const [confirmed, setConfirmed] = useState(null);
   const allLevels = useMemo(
     () => [
-      ...(publicGallery && !allowPreloadedAssets ? [] : LEVELS),
+      ...(allowPreloadedAssets ? LEVELS : []),
       ...(Array.isArray(customLevels) ? customLevels : []),
     ],
     [allowPreloadedAssets, customLevels, publicGallery]

@@ -39,10 +39,15 @@ function getCharacterSearchFields(char) {
   };
 }
 
+function getRandomLevel() {
+  return LEVELS[Math.floor(Math.random() * LEVELS.length)] || LEVELS[0] || null;
+}
+
 export default function CharacterSelect({ publicGallery = false, allowPreloadedAssets = false, initialMode = null }) {
   const router = useRouter();
   const [mode, setMode] = useState(initialMode);
-  const [level, setLevel] = useState(publicGallery && !allowPreloadedAssets ? null : LEVELS[0]);
+  const [level, setLevel] = useState(null);
+  const [fightLevel, setFightLevel] = useState(null);
   const [p1Rotated, setP1Rotated] = useState(false);
   const [p2Rotated, setP2Rotated] = useState(false);
 
@@ -137,15 +142,6 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     };
   }, []);
 
-  useEffect(() => {
-    if (publicGallery && !allowPreloadedAssets && level && LEVELS.some((item) => item.id === level.id)) {
-      setLevel(null);
-    }
-    if ((!publicGallery || allowPreloadedAssets) && !level) {
-      setLevel(LEVELS[0]);
-    }
-  }, [allowPreloadedAssets, level, publicGallery]);
-
   const order = useMemo(() => (mode ? DRAFT_ORDER[mode] : []), [mode]);
   const currentPlayer = !done && mode ? order[draftStep] : null;
   const pickedIds = useMemo(() => picks.map((p) => p.character.id), [picks]);
@@ -208,6 +204,10 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     ? Math.min(Math.max((viewportWidth || 390) * 0.26, 96), 190)
     : Math.min((viewportWidth || 875) * 0.32, 520);
   const pickSlotSize = isNarrowViewport ? 34 : isCompactViewport ? 42 : 52;
+  const activeFightLevel = useMemo(
+    () => fightStarted ? (fightLevel || level || getRandomLevel()) : null,
+    [fightLevel, fightStarted, level]
+  );
 
   const confirmPick = useCallback((char) => {
     if (!mode || done || pickedIds.includes(char.id)) return;
@@ -279,7 +279,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
   function reset() {
     setPicks([]); setDraftStep(0); setDone(false); setFightStarted(false);
-    setMode(null); setLevel(null); setShowLevelSelect(false); setCursor(0);
+    setMode(null); setLevel(null); setFightLevel(null); setShowLevelSelect(false); setCursor(0);
     setP1Rotated(false); setP2Rotated(false);
   }
 
@@ -288,9 +288,16 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
     setDraftStep(0);
     setDone(false);
     setFightStarted(false);
+    setFightLevel(null);
     setCursor(0);
     setP1Rotated(false);
     setP2Rotated(false);
+  }
+
+  function startFight() {
+    const nextFightLevel = level || getRandomLevel();
+    setFightLevel(nextFightLevel);
+    setFightStarted(true);
   }
 
   // Handle mode select. "level-select" is a special signal.
@@ -317,6 +324,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         onBack={() => setShowLevelSelect(false)}
         onSelect={(lv) => {
           setLevel(lv);
+          setFightLevel(null);
           // After picking a level, send them to mode select (without level-select button reappearing)
           setShowLevelSelect(false);
           // We set a temporary flag so ModeSelect shows without the level entry (optional UX)
@@ -507,6 +515,27 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             >
               <span style={{ fontSize: 9 }}>{level.icon}</span>
               {level.name}
+            </motion.div>
+          )}
+          {!level && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 10px",
+                border: `1px solid ${GOLD}55`,
+                background: `${GOLD}10`,
+                color: GOLD,
+                fontFamily: "var(--font-display)",
+                fontSize: 7,
+                letterSpacing: "0.3em",
+                marginBottom: 4,
+              }}
+            >
+              RANDOM ARENA
             </motion.div>
           )}
           <div style={{
@@ -749,7 +778,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <motion.button
                 disabled={!done}
-                onClick={done ? () => setFightStarted(true) : undefined}
+                onClick={done ? startFight : undefined}
                 whileHover={done ? { scale: 1.05 } : {}}
                 whileTap={done ? { scale: 0.95 } : {}}
                 style={{
@@ -868,11 +897,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 gap: 6,
               }}
             >
-              {level ? (
-                <>{level.icon} {level.name}</>
-              ) : (
-                "SELECT LEVEL"
-              )}
+              {level ? <>{level.icon} {level.name}</> : "RANDOM ARENA"}
             </button>
 
             <button
@@ -1015,7 +1040,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
           p1Rotated={p1Rotated}
           p2Rotated={p2Rotated}
           onRematch={reset}
-          level={level}
+          level={activeFightLevel}
           isTeacherView={Boolean(classSession?.isAdmin)}
         />
       )}
@@ -1036,6 +1061,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
               onBack={() => setShowLevelSelect(false)}
               onSelect={(lv) => {
                 setLevel(lv);
+                setFightLevel(null);
                 setShowLevelSelect(false);
               }}
             />

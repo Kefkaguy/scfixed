@@ -72,7 +72,7 @@ export function AppShell({ children, className = "" }) {
   return (
     <main className={`min-h-screen overflow-x-hidden bg-[var(--bg-app-shell)] text-white ${className}`}>
       
-      <motion.div {...pageMotion} className="relative z-10 mx-auto w-full max-w-[1800px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 2xl:px-10">
+      <motion.div {...pageMotion} className="relative z-10 mx-auto w-full max-w-[1800px] px-3 py-4 sm:px-6 sm:py-7 lg:px-8 2xl:px-10">
         {children}
       </motion.div>
     </main>
@@ -93,25 +93,25 @@ export function TopNav({ session, onSignOut }) {
   const nav = isTeacher ? teacherNav : publicNav;
 
   return (
-    <header className="mb-5 rounded-lg bg-[rgba(5,7,16,0.78)] px-4 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
+    <header className="mb-5 rounded-lg bg-[rgba(5,7,16,0.78)] px-3 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl sm:px-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <Link href="/" className="group flex items-center gap-3 no-underline">
-          <SiteLogoMark className="h-11 w-16 transition group-hover:scale-105" />
-          <span>
-            <span className="block font-[var(--font-name)] text-2xl leading-none tracking-normal text-white sm:text-3xl">
+        <Link href="/" className="group flex min-w-0 items-center gap-3 no-underline">
+          <SiteLogoMark className="h-10 w-14 shrink-0 transition group-hover:scale-105 sm:h-11 sm:w-16" />
+          <span className="min-w-0">
+            <span className="block truncate font-[var(--font-name)] text-2xl leading-none tracking-normal text-white sm:text-3xl">
               Digital Art Battle
             </span>
-            <span className="block text-xs font-semibold tracking-[0.18em] text-[var(--color-text-muted)]">
+            <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] sm:text-xs sm:tracking-[0.18em]">
               public character select
             </span>
           </span>
         </Link>
-        <nav className="flex flex-wrap items-center gap-2">
+        <nav className="-mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {nav.map(([label, href]) => (
             <Link
               key={href}
               href={href}
-              className="rounded-md border border-transparent px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition hover:border-[color:var(--color-surface-border-5)] hover:bg-[color:var(--color-surface-soft-3)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              className="shrink-0 rounded-md border border-transparent px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] transition hover:border-[color:var(--color-surface-border-5)] hover:bg-[color:var(--color-surface-soft-3)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)] sm:text-xs sm:tracking-[0.18em]"
             >
               {label}
             </Link>
@@ -120,14 +120,14 @@ export function TopNav({ session, onSignOut }) {
             <button
               type="button"
               onClick={onSignOut}
-              className="rounded-md border border-[color:var(--color-surface-border-5)] bg-[color:var(--color-surface-soft-3)] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition hover:bg-[color:var(--color-surface-soft-4)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              className="shrink-0 rounded-md border border-[color:var(--color-surface-border-5)] bg-[color:var(--color-surface-soft-3)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] transition hover:bg-[color:var(--color-surface-soft-4)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)] sm:text-xs sm:tracking-[0.18em]"
             >
               Sign out
             </button>
           ) : (
             <Link
               href="/login?callbackUrl=/"
-              className="rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--gold)] transition hover:bg-[color:var(--gold-16)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              className="shrink-0 rounded-md border border-[color:var(--gold-55)] bg-[color:var(--gold-10)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--gold)] transition hover:bg-[color:var(--gold-16)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] sm:text-xs sm:tracking-[0.18em]"
             >
               Teacher Login
             </Link>
@@ -166,7 +166,7 @@ export function SectionHeader({ label, title, children, action }) {
 
 export function Button({ children, href, onClick, type = "button", disabled = false, tone = "gold", className = "" }) {
   const palette = tones[tone] || tones.gold;
-  const classes = `inline-flex min-h-10 items-center justify-center rounded-md border px-4 py-2 text-center text-xs font-black uppercase tracking-[0.2em] transition focus:outline-none focus:ring-2 focus:ring-[var(--gold)] disabled:pointer-events-none disabled:opacity-50 ${palette.border} ${palette.bg} ${palette.text} ${palette.hover} ${className}`;
+  const classes = `inline-flex min-h-10 max-w-full items-center justify-center rounded-md border px-3 py-2 text-center text-[11px] font-black uppercase leading-snug tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-[var(--gold)] disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-xs sm:tracking-[0.2em] ${palette.border} ${palette.bg} ${palette.text} ${palette.hover} ${className}`;
 
   if (href) {
     return (

@@ -117,6 +117,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [joinCode, setJoinCode] = useState("");
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   const currentClass = session?.currentClass ?? null;
   const user = session?.user ?? null;
@@ -124,6 +125,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
   const canUpload = Boolean(session?.canUploadToClass);
   const showEditor = Boolean(editing);
   const activeEditing = editing ?? emptyArena();
+  const isCompactLayout = (viewportWidth || 0) > 0 && viewportWidth < 900;
 
   const loadSession = useCallback(async () => {
     const response = await fetch("/api/session", { cache: "no-store" });
@@ -175,6 +177,21 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
       cancelled = true;
     };
   }, [loadArenas, loadSession]);
+
+  useEffect(() => {
+    function updateViewportWidth() {
+      setViewportWidth(window.innerWidth);
+    }
+
+    updateViewportWidth();
+    window.addEventListener("resize", updateViewportWidth);
+    window.visualViewport?.addEventListener("resize", updateViewportWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportWidth);
+      window.visualViewport?.removeEventListener("resize", updateViewportWidth);
+    };
+  }, []);
 
   function updateEditing(patch) {
     setEditing((previous) => ({ ...(previous ?? emptyArena()), ...patch }));
@@ -339,14 +356,14 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
         }}
         onClick={modal ? (event) => event.stopPropagation() : undefined}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <div>
+        <div style={{ display: "flex", flexDirection: isCompactLayout ? "column" : "row", justifyContent: "space-between", alignItems: isCompactLayout ? "stretch" : "center", gap: 14, padding: isCompactLayout ? "14px 16px" : "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.45em", color: "#8d93a8" }}>CLASS ARENAS</div>
             <div style={{ marginTop: 8, color: "rgba(255,255,255,0.56)", fontSize: 14, letterSpacing: "0.1em" }}>
               {currentClass ? `${currentClass.name} . custom arenas only show in this class.` : "Login first, then join a class to upload custom arena backgrounds."}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {user ? (
               <button type="button" onClick={handleSignOut} style={{ color: "#a7afc2", border: "1px solid rgba(255,255,255,0.14)", padding: "8px 12px", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>
                 SIGN OUT
@@ -364,7 +381,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
           </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 22, display: "grid", gridTemplateColumns: showEditor ? "minmax(0, 1fr) 460px" : "1fr", gap: 22 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isCompactLayout ? 14 : 22, display: "grid", gridTemplateColumns: showEditor && !isCompactLayout ? "minmax(0, 1fr) 460px" : "1fr", gap: isCompactLayout ? 14 : 22 }}>
           <div>
             {error ? <div style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid rgba(232,0,26,0.35)", background: "rgba(232,0,26,0.08)", color: "#ff8a95", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.2em" }}>{error}</div> : null}
             {status ? <div style={{ marginBottom: 14, padding: "12px 14px", border: `1px solid ${GOLD}35`, background: `${GOLD}12`, color: "#f7d977", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.2em" }}>{status}</div> : null}
@@ -377,7 +394,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
                 </Link>
               </div>
             ) : !currentClass ? (
-              <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+              <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))" }}>
                 <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", padding: 20 }}>
                   <div style={{ fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: "0.28em", color: "#fff" }}>JOIN A CLASS</div>
                   <div style={{ marginTop: 10, color: "#8d93a8", fontSize: 13, lineHeight: 1.6 }}>
@@ -426,8 +443,8 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
                     {arenas.map((arena) => {
                       const arenaId = arena._id || arena.id;
                       return (
-                        <div key={arenaId} style={{ display: "grid", gridTemplateColumns: "180px minmax(0, 1fr) auto", gap: 18, alignItems: "center", padding: "18px 16px", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(10,14,22,0.9)" }}>
-                          <div style={{ width: 180, aspectRatio: "16 / 9", border: `1px solid ${arena.color || GOLD}55`, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                        <div key={arenaId} style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "180px minmax(0, 1fr) auto", gap: isCompactLayout ? 12 : 18, alignItems: "center", padding: isCompactLayout ? 14 : "18px 16px", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(10,14,22,0.9)" }}>
+                          <div style={{ width: isCompactLayout ? "100%" : 180, aspectRatio: "16 / 9", border: `1px solid ${arena.color || GOLD}55`, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                             {arena.bgSrc ? (
                               isVideoPreview(arena.bgSrc) ? (
                                 <video src={arena.bgSrc} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -451,7 +468,7 @@ export default function CustomArenasManager({ modal = false, onClose = null }) {
                             </div>
                           </div>
                           {isAdmin ? (
-                            <div style={{ display: "flex", gap: 10 }}>
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                               <button type="button" onClick={() => setEditing(normalizeArena(arena))} style={{ padding: "10px 14px", border: "1px solid rgba(255,255,255,0.14)", color: "#a7afc2", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.22em" }}>
                                 EDIT
                               </button>

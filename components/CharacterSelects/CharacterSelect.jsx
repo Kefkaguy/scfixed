@@ -201,7 +201,13 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
   const p1FlavorText = p1DisplayChars[0]?.lore || p1DisplayChars[0]?.description || "";
   const p2FlavorText = p2DisplayChars[0]?.lore || p2DisplayChars[0]?.description || "";
-  const selectArtSize = Math.min((viewportWidth || 875) * 0.32, 520);
+  const isCompactViewport = (viewportWidth || 0) > 0 && viewportWidth < 760;
+  const isNarrowViewport = (viewportWidth || 0) > 0 && viewportWidth < 520;
+  const selectGridCols = isNarrowViewport ? 4 : isCompactViewport ? 5 : COLS;
+  const selectArtSize = isCompactViewport
+    ? Math.min(Math.max((viewportWidth || 390) * 0.26, 96), 190)
+    : Math.min((viewportWidth || 875) * 0.32, 520);
+  const pickSlotSize = isNarrowViewport ? 34 : isCompactViewport ? 42 : 52;
 
   const confirmPick = useCallback((char) => {
     if (!mode || done || pickedIds.includes(char.id)) return;
@@ -409,7 +415,8 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
       style={{
         position: "relative",
         width: "100vw",
-        height: "100vh",
+        height: "100dvh",
+        minHeight: 520,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -459,14 +466,15 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
       <div style={{
         position: "relative", zIndex: 10,
         display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
+        gridTemplateColumns: isCompactViewport ? "1fr" : "1fr auto 1fr",
         alignItems: "center",
-        padding: "10px 24px 8px",
+        gap: isCompactViewport ? 6 : 0,
+        padding: isCompactViewport ? "8px 10px 6px" : "10px 24px 8px",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         background: "transparent",
       }}>
         {/* Left: 1P + NamePlate */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: isCompactViewport ? "center" : "flex-start", minWidth: 0 }}>
           <div style={{
             background: P1_COLOR, color: "#fff",
             fontFamily: "var(--font-display)",
@@ -477,7 +485,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         </div>
 
         {/* Center */}
-        <div style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+        <div style={{ textAlign: "center", whiteSpace: "nowrap", minWidth: 0 }}>
           {/* Level badge */}
           {level && (
             <motion.div
@@ -536,7 +544,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
         </div>
 
         {/* Right: NamePlate + 2P */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: isCompactViewport ? "center" : "flex-end", minWidth: 0 }}>
           <NamePlate char={p2DisplayChar} player={2} side="right" visible={!!p2DisplayChar} />
           <div style={{
             background: P2_COLOR, color: "#fff",
@@ -619,7 +627,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
       <div style={{ position: "relative", zIndex: 5, flex: 1, display: "flex", minHeight: 0 }}>
         {/* LEFT art column */}
         <div style={{
-          position: "relative", zIndex: 10, width: "28%", flexShrink: 0,
+          position: "relative", zIndex: 10, width: isCompactViewport ? "21%" : "28%", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "flex-end",
         }}>
           <AnimatePresence mode="wait">
@@ -651,20 +659,20 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             whileTap={p1DisplayChar ? { scale: 0.96 } : {}}
             style={{
               position: "absolute",
-              right: 12,
-              bottom: 18,
+              right: isCompactViewport ? 2 : 12,
+              bottom: isCompactViewport ? 8 : 18,
               zIndex: 30,
               pointerEvents: "auto",
               display: "flex",
               alignItems: "center",
               gap: 8,
-              padding: "8px 12px",
+              padding: isCompactViewport ? 7 : "8px 12px",
               border: `1px solid ${p1DisplayChar ? `${P1_COLOR}88` : "rgba(255,255,255,0.14)"}`,
               background: p1DisplayChar ? "rgba(12,14,22,0.82)" : "rgba(12,14,22,0.45)",
               color: p1DisplayChar ? P1_COLOR : "rgba(255,255,255,0.34)",
               fontFamily: "var(--font-display)",
               fontSize: "clamp(8px, 0.8vw, 10px)",
-              letterSpacing: "0.26em",
+              letterSpacing: isCompactViewport ? 0 : "0.26em",
               cursor: p1DisplayChar ? "pointer" : "default",
               boxShadow: p1DisplayChar ? `0 0 16px ${P1_COLOR}22` : "none",
               opacity: p1Rotated ? 1 : 0.9,
@@ -675,7 +683,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
           {/* P1 description overlay */}
           <AnimatePresence mode="wait">
-            {currentPlayer === 1 && p1FlavorText && (
+            {!isCompactViewport && currentPlayer === 1 && p1FlavorText && (
               <motion.div
                 key={p1DisplayChars[0].id + "-desc-l"}
                 initial={{ opacity: 0, y: 8 }}
@@ -726,14 +734,15 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 24,
-            padding: "8px 0 10px",
+            gap: isCompactViewport ? 8 : 24,
+            padding: isCompactViewport ? "5px 0 7px" : "8px 0 10px",
+            flexWrap: "wrap",
           }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {Array.from({ length: maxPerPlayer }, (_, i) => {
                 const pick = p1Picks[i];
                 const isPending = !pick && !done && currentPlayer === 1 && p1Picks.length === i;
-                return <PickSlot key={i} pick={pick} label={`P1 ${i + 1}`} color={P1_COLOR} pending={isPending} slotSize={52} />;
+                return <PickSlot key={i} pick={pick} label={`P1 ${i + 1}`} color={P1_COLOR} pending={isPending} slotSize={pickSlotSize} />;
               })}
             </div>
 
@@ -744,7 +753,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 whileHover={done ? { scale: 1.05 } : {}}
                 whileTap={done ? { scale: 0.95 } : {}}
                 style={{
-                  padding: "8px 32px",
+                  padding: isCompactViewport ? "7px 18px" : "8px 32px",
                   fontFamily: "var(--font-name)",
                   fontSize: "clamp(18px, 1.8vw, 24px)",
                   letterSpacing: "0.18em",
@@ -760,7 +769,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 FIGHT
               </motion.button>
               <div style={{
-                fontSize: "min(0.6vw, 8px)",
+                fontSize: "clamp(6px, 1.2vw, 8px)",
                 fontFamily: "var(--font-display)",
                 letterSpacing: "0.4em",
                 color: "#383838",
@@ -773,7 +782,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
               {Array.from({ length: maxPerPlayer }, (_, i) => {
                 const pick = p2Picks[i];
                 const isPending = !pick && !done && currentPlayer === 2 && p2Picks.length === i;
-                return <PickSlot key={i} pick={pick} label={`P2 ${i + 1}`} color={P2_COLOR} pending={isPending} slotSize={52} />;
+                return <PickSlot key={i} pick={pick} label={`P2 ${i + 1}`} color={P2_COLOR} pending={isPending} slotSize={pickSlotSize} />;
               })}
             </div>
           </div>
@@ -781,9 +790,11 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
           {/* Character grid */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+            gridTemplateColumns: `repeat(${selectGridCols}, minmax(0, 1fr))`,
             gap: 3,
-            padding: "0 12px",
+            padding: isCompactViewport ? "0 6px" : "0 12px",
+            overflowY: isCompactViewport ? "auto" : "visible",
+            maxHeight: isCompactViewport ? "39dvh" : "none",
           }}>
             {allChars.map((char, idx) => {
               const whoPickedIt = picks.find((p) => p.character.id === char.id);
@@ -806,9 +817,9 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
           <div style={{
             textAlign: "center",
             marginTop: 6,
-            fontSize: "min(0.65vw, 8px)",
+            fontSize: "clamp(6px, 1.1vw, 8px)",
             fontFamily: "var(--font-display)",
-            letterSpacing: "0.35em",
+            letterSpacing: isCompactViewport ? "0.12em" : "0.35em",
             color: "#333",
           }}>
             TYPE TO SEARCH &nbsp;/&nbsp; ARROWS NAVIGATE &nbsp;/&nbsp; ENTER OR CLICK TO SELECT
@@ -820,6 +831,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             gap: 8,
             marginTop: 6,
             paddingBottom: 2,
+            flexWrap: "wrap",
           }}>
             <button
               onClick={reset}
@@ -830,7 +842,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 letterSpacing: "0.3em",
                 cursor: "pointer",
                 border: "1px solid rgba(255,255,255,0.18)",
-                padding: "6px 18px",
+                padding: isCompactViewport ? "7px 10px" : "6px 18px",
                 background: "rgba(255,255,255,0.04)",
                 transition: "all 0.2s ease",
               }}
@@ -848,7 +860,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 letterSpacing: "0.3em",
                 cursor: "pointer",
                 border: `1px solid ${level ? `${level.color}66` : "rgba(255,255,255,0.1)"}`,
-                padding: "6px 18px",
+                padding: isCompactViewport ? "7px 10px" : "6px 18px",
                 background: level ? `${level.color}0d` : "rgba(255,255,255,0.02)",
                 transition: "all 0.2s ease",
                 display: "flex",
@@ -872,7 +884,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 letterSpacing: "0.3em",
                 cursor: "pointer",
                 border: publicGallery ? `1px solid ${GOLD}88` : classSession?.isAdmin ? "1px solid rgba(232,0,26,0.45)" : `1px solid ${GOLD}88`,
-                padding: "6px 18px",
+                padding: isCompactViewport ? "7px 10px" : "6px 18px",
                 background: publicGallery ? `${GOLD}14` : classSession?.isAdmin ? "rgba(232,0,26,0.1)" : `${GOLD}14`,
                 transition: "all 0.2s ease",
               }}
@@ -890,7 +902,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
                 letterSpacing: "0.3em",
                 cursor: picks.length > 0 ? "pointer" : "default",
                 border: done ? "1px solid rgba(240,192,32,0.52)" : "1px solid rgba(255,255,255,0.18)",
-                padding: "6px 18px",
+                padding: isCompactViewport ? "7px 10px" : "6px 18px",
                 background: done ? "rgba(240,192,32,0.08)" : "rgba(255,255,255,0.04)",
                 transition: "all 0.2s ease",
                 opacity: picks.length > 0 ? 1 : 0.55,
@@ -903,7 +915,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
         {/* RIGHT art column */}
         <div style={{
-          position: "relative", zIndex: 10, width: "28%", flexShrink: 0,
+          position: "relative", zIndex: 10, width: isCompactViewport ? "21%" : "28%", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "flex-start",
         }}>
           <AnimatePresence mode="wait">
@@ -935,20 +947,20 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
             whileTap={p2DisplayChar ? { scale: 0.96 } : {}}
             style={{
               position: "absolute",
-              left: 12,
-              bottom: 18,
+              left: isCompactViewport ? 2 : 12,
+              bottom: isCompactViewport ? 8 : 18,
               zIndex: 30,
               pointerEvents: "auto",
               display: "flex",
               alignItems: "center",
               gap: 8,
-              padding: "8px 12px",
+              padding: isCompactViewport ? 7 : "8px 12px",
               border: `1px solid ${p2DisplayChar ? `${P2_COLOR}88` : "rgba(255,255,255,0.14)"}`,
               background: p2DisplayChar ? "rgba(12,14,22,0.82)" : "rgba(12,14,22,0.45)",
               color: p2DisplayChar ? P2_COLOR : "rgba(255,255,255,0.34)",
               fontFamily: "var(--font-display)",
               fontSize: "clamp(8px, 0.8vw, 10px)",
-              letterSpacing: "0.26em",
+              letterSpacing: isCompactViewport ? 0 : "0.26em",
               cursor: p2DisplayChar ? "pointer" : "default",
               boxShadow: p2DisplayChar ? `0 0 16px ${P2_COLOR}22` : "none",
               opacity: p2Rotated ? 1 : 0.9,
@@ -959,7 +971,7 @@ export default function CharacterSelect({ publicGallery = false, allowPreloadedA
 
           {/* P2 description overlay */}
           <AnimatePresence mode="wait">
-            {currentPlayer === 2 && p2FlavorText && (
+            {!isCompactViewport && currentPlayer === 2 && p2FlavorText && (
               <motion.div
                 key={p2DisplayChars[0].id + "-desc-r"}
                 initial={{ opacity: 0, y: 8 }}

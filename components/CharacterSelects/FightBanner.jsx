@@ -420,7 +420,11 @@ export default function FightBanner({
 
   const fighterLaneWidth = Math.round(sceneSize.width * FIGHTER_LANE_RATIO);
   const fighterLanePadding = Math.round(sceneSize.width * FIGHTER_LANE_PADDING_RATIO);
-  const fightSize = Math.min(sceneSize.width * 0.4, 520);
+  const isCompactScene = sceneSize.width < 760;
+  const isNarrowScene = sceneSize.width < 520;
+  const fightSize = isCompactScene
+    ? Math.min(Math.max(sceneSize.width * 0.34, 120), 230)
+    : Math.min(sceneSize.width * 0.4, 520);
 
   const movement = useMemo(() => ({
     p1: (pressedKeys.p1Right ? 1 : 0) - (pressedKeys.p1Left ? 1 : 0),
@@ -682,14 +686,14 @@ export default function FightBanner({
         data-screenshot-ui="true"
         style={{
           position: "absolute",
-          top: 24,
+          top: isCompactScene ? 12 : 24,
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 20,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 10,
+          gap: isCompactScene ? 6 : 10,
         }}
       >
         <motion.button
@@ -700,12 +704,12 @@ export default function FightBanner({
           whileTap={{ scale: 0.95 }}
           onClick={onRematch}
           style={{
-            padding: "12px 56px",
+            padding: isCompactScene ? "9px 24px" : "12px 56px",
             border: `1px solid ${GOLD}`,
             color: GOLD,
             fontFamily: "var(--font-display)",
-            fontSize: 16,
-            letterSpacing: "0.35em",
+            fontSize: isCompactScene ? 11 : 16,
+            letterSpacing: isCompactScene ? "0.18em" : "0.35em",
             cursor: "pointer",
             background: "rgba(240,192,32,0.07)",
           }}
@@ -716,11 +720,13 @@ export default function FightBanner({
         <div
           style={{
             display: "flex",
-            gap: 18,
+            gap: isCompactScene ? 8 : 18,
+            flexWrap: "wrap",
+            justifyContent: "center",
             color: "rgba(255,255,255,0.58)",
             fontFamily: "var(--font-display)",
-            fontSize: 10,
-            letterSpacing: "0.24em",
+            fontSize: isCompactScene ? 7 : 10,
+            letterSpacing: isCompactScene ? "0.1em" : "0.24em",
           }}
         >
           <span>A / D MOVE 1P</span>
@@ -735,16 +741,16 @@ export default function FightBanner({
         data-screenshot-ui="true"
         style={{
           position: "absolute",
-          top: 24,
-          right: 24,
+          top: isCompactScene ? 12 : 24,
+          right: isCompactScene ? 10 : 24,
           zIndex: 40,
-          padding: "10px 14px",
+          padding: isCompactScene ? "8px 9px" : "10px 14px",
           border: `1px solid ${GOLD}99`,
           background: isCapturing ? "rgba(240,192,32,0.05)" : "rgba(6,8,15,0.84)",
           color: isCapturing ? "rgba(240,192,32,0.48)" : GOLD,
           fontFamily: "var(--font-display)",
-          fontSize: 10,
-          letterSpacing: "0.24em",
+          fontSize: isCompactScene ? 8 : 10,
+          letterSpacing: isCompactScene ? "0.1em" : "0.24em",
           cursor: isCapturing ? "default" : "pointer",
           boxShadow: "0 14px 32px rgba(0,0,0,0.28)",
           backdropFilter: "blur(4px)",
@@ -788,12 +794,12 @@ export default function FightBanner({
             position: "absolute",
             left: 0,
             bottom: 0,
-            width: fighterLaneWidth,
+            width: isCompactScene ? "50%" : fighterLaneWidth,
             height: "100%",
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "flex-end",
-            paddingRight: fighterLanePadding,
+            paddingRight: isCompactScene ? 4 : fighterLanePadding,
             zIndex: 5,
             pointerEvents: "none",
           }}
@@ -821,12 +827,12 @@ export default function FightBanner({
             position: "absolute",
             right: 0,
             bottom: 0,
-            width: fighterLaneWidth,
+            width: isCompactScene ? "50%" : fighterLaneWidth,
             height: "100%",
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "flex-start",
-            paddingLeft: fighterLanePadding,
+            paddingLeft: isCompactScene ? 4 : fighterLanePadding,
             zIndex: 5,
             pointerEvents: "none",
           }}
@@ -853,16 +859,17 @@ export default function FightBanner({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr auto 1fr",
+            gridTemplateColumns: isNarrowScene ? "1fr" : "1fr auto 1fr",
+            gap: isNarrowScene ? 6 : 0,
             alignItems: "center",
-            width: "min(900px, 80vw)",
+            width: isNarrowScene ? "min(360px, 92vw)" : "min(900px, 80vw)",
           }}
         >
           <motion.div
             initial={{ x: -40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-            style={{ textAlign: "right", justifySelf: "end" }}
+            style={{ textAlign: isNarrowScene ? "center" : "right", justifySelf: isNarrowScene ? "center" : "end" }}
           >
             {p1Chars.map((pk) => (
               <div key={pk.character.id} style={{ fontFamily: "var(--font-name)", fontSize: "clamp(16px, 2.2vw, 32px)", color: pk.character.color || P1_COLOR, letterSpacing: "0.06em", textShadow: "3px 3px 0 rgba(0,0,0,0.8)" }}>
@@ -870,7 +877,7 @@ export default function FightBanner({
               </div>
             ))}
             {p1EntranceQuote ? (
-              <div style={{ marginTop: 8, maxWidth: 280, marginLeft: "auto", color: "rgba(255,255,255,0.78)", fontFamily: "var(--font-display)", fontSize: "clamp(10px, 1vw, 13px)", letterSpacing: "0.06em", lineHeight: 1.7 }}>
+              <div style={{ marginTop: 8, maxWidth: 280, marginLeft: isNarrowScene ? 0 : "auto", color: "rgba(255,255,255,0.78)", fontFamily: "var(--font-display)", fontSize: "clamp(10px, 1vw, 13px)", letterSpacing: "0.06em", lineHeight: 1.7 }}>
                 &quot;{p1EntranceQuote}&quot;
               </div>
             ) : null}
@@ -889,7 +896,7 @@ export default function FightBanner({
             initial={{ x: 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-            style={{ textAlign: "left", justifySelf: "start" }}
+            style={{ textAlign: isNarrowScene ? "center" : "left", justifySelf: isNarrowScene ? "center" : "start" }}
           >
             {p2Chars.map((pk) => (
               <div key={pk.character.id} style={{ fontFamily: "var(--font-name)", fontSize: "clamp(16px, 2.2vw, 32px)", color: pk.character.color || P2_COLOR, letterSpacing: "0.06em", textShadow: "3px 3px 0 rgba(0,0,0,0.8)" }}>
@@ -908,7 +915,7 @@ export default function FightBanner({
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: [0, 1, 1, 1, 0], opacity: [0, 1, 1, 1, 0] }}
           transition={{ delay: 0.3, duration: 2.4, times: [0, 0.12, 0.5, 0.75, 1], ease: "easeInOut" }}
-          style={{ fontFamily: "var(--font-name)", fontSize: "clamp(52px, 9.5vw, 120px)", background: `linear-gradient(90deg, ${P1_COLOR}, #ff8800, #fff, #ffcc00, ${P2_COLOR})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "0.1em", lineHeight: 1, transformOrigin: "center" }}
+          style={{ fontFamily: "var(--font-name)", fontSize: "clamp(44px, 9.5vw, 120px)", background: `linear-gradient(90deg, ${P1_COLOR}, #ff8800, #fff, #ffcc00, ${P2_COLOR})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: isNarrowScene ? "0.04em" : "0.1em", lineHeight: 1, transformOrigin: "center" }}
         >
           FIGHT!
         </motion.div>

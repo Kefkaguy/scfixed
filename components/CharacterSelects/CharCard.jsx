@@ -64,7 +64,7 @@ export default function CharCard({ char, isSelected, pickedBy, isCursor1, isCurs
             }}
           />
         ) : (
-          <span style={{ fontSize: "min(3.5vw, 36px)" }}>{char.element}</span>
+          <span style={{ fontSize: "clamp(18px, 5vw, 36px)" }}>{char.element}</span>
         )}
       </div>
 
@@ -74,7 +74,7 @@ export default function CharCard({ char, isSelected, pickedBy, isCursor1, isCurs
         background: "rgba(0,0,0,0.75)",
         padding: "2px 3px",
         textAlign: "center",
-        fontSize: "min(0.7vw, 9px)",
+        fontSize: "clamp(6px, 1.5vw, 9px)",
         fontFamily: "var(--font-display)",
         letterSpacing: "0.1em",
         color: isPicked ? "#666" : char.color,
@@ -91,7 +91,7 @@ export default function CharCard({ char, isSelected, pickedBy, isCursor1, isCurs
           position: "absolute", top: 2, right: 2,
           background: pickedBy === 1 ? P1_COLOR : P2_COLOR,
           color: "#fff",
-          fontSize: "min(0.6vw, 8px)",
+          fontSize: "clamp(6px, 1.35vw, 8px)",
           fontFamily: "var(--font-display)",
           padding: "1px 4px",
           letterSpacing: "0.1em",

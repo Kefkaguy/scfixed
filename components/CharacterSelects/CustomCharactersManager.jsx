@@ -213,6 +213,7 @@ export default function CustomCharactersManager({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [removingStudentId, setRemovingStudentId] = useState("");
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   const currentClass = session?.currentClass ?? null;
   const user = session?.user ?? null;
@@ -326,6 +327,21 @@ export default function CustomCharactersManager({
       initialEditorType === "arena" && initialItem ? { ...emptyArena(), ...initialItem } : emptyArena()
     );
   }, [initialEditorType, initialItem, initialTab]);
+
+  useEffect(() => {
+    function updateViewportWidth() {
+      setViewportWidth(window.innerWidth);
+    }
+
+    updateViewportWidth();
+    window.addEventListener("resize", updateViewportWidth);
+    window.visualViewport?.addEventListener("resize", updateViewportWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportWidth);
+      window.visualViewport?.removeEventListener("resize", updateViewportWidth);
+    };
+  }, []);
 
   function resetEditors() {
     setEditorType(null);
@@ -523,8 +539,11 @@ export default function CustomCharactersManager({
   }, [account?.arenas, account?.uploads, galleryFilter, searchTerm]);
   const showcaseGridColumns =
     tab === "fighters"
-      ? "repeat(auto-fit, minmax(240px, 280px))"
-      : "repeat(auto-fit, minmax(260px, 320px))";
+      ? "repeat(auto-fit, minmax(min(100%, 240px), 1fr))"
+      : "repeat(auto-fit, minmax(min(100%, 260px), 1fr))";
+  const isCompactManager = (viewportWidth || 0) > 0 && viewportWidth < 900;
+  const managerGridColumns = editorType && !isCompactManager ? "minmax(0, 1fr) 420px" : "1fr";
+  const studentGridColumns = isCompactManager ? "1fr" : "minmax(260px, 1.2fr) minmax(220px, 1fr) 140px";
   const filteredList = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) {
@@ -806,8 +825,8 @@ export default function CustomCharactersManager({
       onClick={modal ? (event) => { if (event.target === event.currentTarget) onClose?.(); } : undefined}
     >
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: modal ? "min(1800px, calc(100vw - 32px))" : "calc(100vw - 32px)", maxWidth: modal ? undefined : 1880, minHeight: modal ? "88vh" : "calc(100vh - 72px)", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(5,7,16,0.95)", boxShadow: "0 24px 80px rgba(0,0,0,0.45)", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={modal ? (event) => event.stopPropagation() : undefined}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <div>
+        <div style={{ display: "flex", flexDirection: isCompactManager ? "column" : "row", justifyContent: "space-between", alignItems: isCompactManager ? "stretch" : "center", gap: 14, padding: isCompactManager ? "14px 16px" : "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.45em", color: "#8d93a8" }}>{isTeacherGalleryTab ? "TEACHER ASSETS" : "CLASS CONTENT"}</div>
             <div style={{ marginTop: 8, color: "rgba(255,255,255,0.56)", fontSize: 14, letterSpacing: "0.1em" }}>
               {isTeacherGalleryTab
@@ -819,7 +838,7 @@ export default function CustomCharactersManager({
                     : "Join a class first to view what the class has uploaded."}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {user ? <button type="button" onClick={handleSignOut} style={{ color: "#a7afc2", border: "1px solid rgba(255,255,255,0.14)", padding: "8px 12px", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>SIGN OUT</button> : <Link href={loginHref} style={{ color: GOLD, textDecoration: "none", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em", border: `1px solid ${GOLD}66`, padding: "8px 12px", background: `${GOLD}10` }}>LOGIN</Link>}
             {isAdmin ? (
               modal ? (
@@ -833,13 +852,13 @@ export default function CustomCharactersManager({
         </div>
 
         {!isTeacherGalleryTab ? (
-          <div style={{ padding: "14px 22px 0", display: "flex", gap: 10, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ padding: isCompactManager ? "12px 14px 0" : "14px 22px 0", display: "flex", gap: 10, flexWrap: "wrap", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
             <button type="button" onClick={() => handleTabChange("fighters")} style={{ padding: "10px 14px", border: `1px solid ${tab === "fighters" ? GOLD : "rgba(255,255,255,0.12)"}`, color: tab === "fighters" ? GOLD : "#a7afc2", background: tab === "fighters" ? `${GOLD}10` : "transparent", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>GIF FIGHTERS</button>
             <button type="button" onClick={() => handleTabChange("arenas")} style={{ padding: "10px 14px", border: `1px solid ${tab === "arenas" ? GOLD : "rgba(255,255,255,0.12)"}`, color: tab === "arenas" ? GOLD : "#a7afc2", background: tab === "arenas" ? `${GOLD}10` : "transparent", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>ARENA BACKGROUNDS</button>
             {isAdmin ? <button type="button" onClick={() => handleTabChange("students")} style={{ padding: "10px 14px", border: `1px solid ${tab === "students" ? GOLD : "rgba(255,255,255,0.12)"}`, color: tab === "students" ? GOLD : "#a7afc2", background: tab === "students" ? `${GOLD}10` : "transparent", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>STUDENTS</button> : null}
           </div>
         ) : null}
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 22, display: "grid", gridTemplateColumns: editorType ? "minmax(0, 1fr) 420px" : "1fr", gap: 22, alignItems: "start" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isCompactManager ? 14 : 22, display: "grid", gridTemplateColumns: managerGridColumns, gap: isCompactManager ? 14 : 22, alignItems: "start" }}>
           <div>
             {error ? <div style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid rgba(232,0,26,0.35)", background: "rgba(232,0,26,0.08)", color: "#ff8a95", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.2em" }}>{error}</div> : null}
             {status ? <div style={{ marginBottom: 14, padding: "12px 14px", border: `1px solid ${GOLD}35`, background: `${GOLD}12`, color: "#f7d977", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.2em" }}>{status}</div> : null}
@@ -1004,7 +1023,7 @@ export default function CustomCharactersManager({
                     {galleryItems.length === 0 ? (
                       <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", padding: "44px 22px", textAlign: "center", color: "#70798e", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>NO TEACHER ASSETS MATCH THIS FILTER</div>
                     ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 310px))", gap: 18, justifyContent: "start", alignItems: "stretch" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))", gap: 18, justifyContent: "start", alignItems: "stretch" }}>
                         {galleryItems.map((item) => {
                           const id = item._id || item.id;
                           const isFighterAsset = item.assetType === "fighter";
@@ -1035,13 +1054,13 @@ export default function CustomCharactersManager({
                 ) : isStudentsTab ? (
                   classMembers.length === 0 ? <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", padding: "44px 22px", textAlign: "center", color: "#70798e", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>NO STUDENTS HAVE JOINED THIS CLASS YET</div> : filteredList.length === 0 ? <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", padding: "44px 22px", textAlign: "center", color: "#70798e", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.3em" }}>NO MATCHES FOR THAT SEARCH</div> : (
                     <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", overflow: "hidden" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1.2fr) minmax(220px, 1fr) 140px", gap: 16, padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "#8d93a8", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.28em" }}>
+                      <div style={{ display: isCompactManager ? "none" : "grid", gridTemplateColumns: studentGridColumns, gap: 16, padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "#8d93a8", fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: "0.28em" }}>
                         <div>STUDENT</div>
                         <div>EMAIL</div>
                         <div>STATUS</div>
                       </div>
                       {filteredList.map((member, index) => (
-                        <div key={member.id} style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1.2fr) minmax(220px, 1fr) 140px", gap: 16, padding: "16px 18px", borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.06)", alignItems: "center" }}>
+                        <div key={member.id} style={{ display: "grid", gridTemplateColumns: studentGridColumns, gap: isCompactManager ? 10 : 16, padding: isCompactManager ? "14px" : "16px 18px", borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.06)", alignItems: "center" }}>
                           <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 42, height: 42, overflow: "hidden", border: `1px solid ${GOLD}44`, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {member.image ? (
@@ -1060,7 +1079,7 @@ export default function CustomCharactersManager({
                             </div>
                           </div>
                           <div style={{ minWidth: 0, color: "#a7afc2", fontSize: 13, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis" }}>{member.email || "No email available"}</div>
-                          <div style={{ minWidth: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                          <div style={{ minWidth: 0, display: "flex", justifyContent: isCompactManager ? "flex-start" : "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                             <div
                               style={{
                                 flexShrink: 0,
@@ -1147,7 +1166,7 @@ export default function CustomCharactersManager({
               </>
             )}
           </div>
-          {!readOnly && editorType ? <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(9,11,20,0.95)", padding: 18, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 0, maxHeight: "calc(88vh - 120px)", overflowY: "auto" }}>
+          {!readOnly && editorType ? <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(9,11,20,0.95)", padding: 18, display: "flex", flexDirection: "column", gap: 16, position: isCompactManager ? "relative" : "sticky", top: 0, maxHeight: isCompactManager ? "none" : "calc(88vh - 120px)", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: "0.35em", color: "#888" }}>{editorType === "fighter" ? (fighterDraft._id ? "EDIT GIF FIGHTER" : "NEW GIF FIGHTER") : (arenaDraft._id ? "EDIT CLASS ARENA" : "NEW CLASS ARENA")}</div></div>
             {isAdmin ? (
               <div style={{ display: "grid", gap: 12 }}>
